@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>ecologIA: Limpiar el Parque</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui">
+        <div class="left">
+            <span id="levelDisplay">📈 Nivel: 1</span>
+        </div>
+        <div class="right">
+            <span id="livesDisplay">❤️ ❤️ ❤️</span>
+            <span id="timerDisplay">⏱ 45</span>
+        </div>
+    </div>
+
+    <div id="progressBar"><div id="progressFill"></div></div>
+
+    <div id="missionBanner">
+        <span id="missionText"></span>
+        <span id="missionProgress"></span>
+    </div>
+
+    <div id="prizeBoard">
+        <div class="prize-board-title">🏆 Premios</div>
+        <div class="prize-slots" id="prizeSlots"></div>
+    </div>
+
+    <div id="placementBanner" class="hidden">
+        <span>Elegí un premio del tablero y hacé clic en el parque para colocarlo</span>
+        <button id="finishBtn">Terminar</button>
+    </div>
+
+    <div id="factBubble" class="fact-bubble hidden"></div>
+
+    <div id="speechBubble" class="speech-bubble hidden">
+        <span id="speechFace">👦</span>
+        <span id="speechText"></span>
+    </div>
+
+    <div id="ballChoice" class="screen hidden">
+        <div class="card">
+            <h1>⚽ Elige el arco</h1>
+            <p class="tip">¿Qué arco querés para tu pelota?</p>
+            <div class="char-select">
+                <button id="soccerBtn" class="char-option">
+                    <span class="char-face">⚽</span>
+                    <span class="char-name">Fútbol</span>
+                </button>
+                <button id="basketBtn" class="char-option">
+                    <span class="char-face">🏀</span>
+                    <span class="char-name">Básquet</span>
+                </button>
+                <button id="volleyBtn" class="char-option">
+                    <span class="char-face">🏐</span>
+                    <span class="char-name">Vóley</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="touchControls" class="hidden">
+        <div class="dpad">
+            <button id="btnUp" class="ctrl-btn dp-up">▲</button>
+            <button id="btnLeft" class="ctrl-btn dp-left">◀</button>
+            <button id="btnRight" class="ctrl-btn dp-right">▶</button>
+            <button id="btnDown" class="ctrl-btn dp-down">▼</button>
+        </div>
+    </div>
+
+    <div id="selectScreen" class="screen">
+        <div class="card">
+            <div class="logo">🌳</div>
+            <h1>ecologIA</h1>
+            <p class="subtitle">Limpiar el Parque</p>
+            <p class="intro">¡Elegí con quién querés jugar! Ambos son guardianes del planeta 💚</p>
+            <div class="char-select">
+                <button id="boyBtn" class="char-option">
+                    <span class="char-face boy-face">👦</span>
+                    <span class="char-name">Niño</span>
+                </button>
+                <button id="girlBtn" class="char-option">
+                    <span class="char-face girl-face">👧</span>
+                    <span class="char-name">Niña</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="startScreen" class="screen hidden">
+        <div class="card">
+            <div class="logo">🌳</div>
+            <h1>ecologIA</h1>
+            <p class="subtitle">Limpiar el Parque</p>
+            <p class="intro">El parque está sucio y descuidado. Completá cada misión recogiendo solo la basura que indica antes de que el tiempo se agote. Cada premio que ganes caerá en el tablero de abajo 🏆, y cuando termines de limpiar el parque podrás colocarlos donde quieras. ¡Sé el guardian que el planeta necesita!</p>
+            <div class="instructions">
+                <div><span class="key">WASD</span> / <span class="key">←↑↓→</span> Mover</div>
+                <div><span class="key">Clic</span> Colocar premios al final</div>
+            </div>
+            <button id="startBtn">Comenzar</button>
+        </div>
+    </div>
+
+    <div id="gameOverScreen" class="screen hidden">
+        <div class="card">
+            <h1>💔 ¡Se acabó!</h1>
+            <p class="tip">El planeta te necesita: cada residuo bien separado cuenta.</p>
+            <button id="restartBtn">Reintentar</button>
+        </div>
+    </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>

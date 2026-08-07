@@ -1,0 +1,1827 @@
+/* ecologIA: Limpiar el Parque - Motor del juego */
+(() => {
+    'use strict';
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const W = 900, H = 600;
+    const BOUNDS = { x1: 45, y1: 70, x2: 855, y2: 550 };
+
+    const TREES = [[200, 200], [700, 200], [200, 420], [700, 420], [90, 290], [810, 290], [450, 540]];
+
+    const FLOWERS = [[300, 120], [600, 120], [330, 520], [580, 520], [450, 200], [450, 440]];
+
+    const ITEMS = [
+        { emoji: '🍌', cat: 'organico', fact: 'Una cáscara de banana tarda unos 2 años en descomponerse.' },
+        { emoji: '🍎', cat: 'organico', fact: 'El corazón de manzana puede convertirse en abono para plantas.' },
+        { emoji: '🍉', cat: 'organico', fact: 'La cáscara de sandía es 100% compostable.' },
+        { emoji: '🥕', cat: 'organico', fact: 'La composta hecha con restos orgánicos enriquece el suelo.' },
+        { emoji: '🧴', cat: 'plastico', fact: 'Una botella de plástico tarda hasta 500 años en degradarse.' },
+        { emoji: '🛍️', cat: 'plastico', fact: 'Cada año terminan en el mar 8 millones de toneladas de plástico.' },
+        { emoji: '🥤', cat: 'plastico', fact: '¡Reutilizar bolsas evita miles de bolsas plásticas al año!' },
+        { emoji: '📰', cat: 'papel', fact: 'Reciclar papel salva árboles y ahorra agua y energía.' },
+        { emoji: '📦', cat: 'papel', fact: 'El cartón reciclado evita la tala de millones de árboles.' },
+        { emoji: '📄', cat: 'papel', fact: 'Una tonelada de papel reciclado salva 17 árboles.' },
+        { emoji: '🍾', cat: 'vidrio', fact: 'El vidrio se puede reciclar infinitas veces sin perder calidad.' },
+        { emoji: '🫙', cat: 'vidrio', fact: 'El vidrio tarda 4.000 años en descomponerse en la naturaleza.' },
+        { emoji: '🥃', cat: 'vidrio', fact: 'Reciclar una botella de vidrio ahorra energía para encender una ampolleta 4 horas.' },
+        { emoji: '💩', cat: 'peligroso', fact: '¡El popó de perro es un residuo peligroso! Hay que recogerlo con cuidado porque contamina.' },
+    ];
+
+    const MISSIONS = [
+        { accepts: ['🧴'], name: 'Recoge solo botellas de plástico', icon: '🧴', target: 8, prize: 'ball' },
+        { accepts: ['📰', '📦', '📄'], name: 'Recoge solo papel y cartón', icon: '📰', target: 7, prize: 'swing' },
+        { accepts: ['🍌', '🍉', '🍎'], name: 'Recoge cáscaras de plátano, de sandía y manzanas mordidas', icon: '🍉', target: 6, prize: 'stroller' },
+        { accepts: ['💩'], name: 'Recoge los residuos peligrosos', icon: '💩', target: 4, prize: 'pool' },
+    ];
+    const MAX_LEVEL = MISSIONS.length;
+
+    const PRIZES_INFO = {
+        ball: { name: 'Pelota con arco', emoji: '⚽' },
+        swing: {
+            name: 'Columpio y sube y baja', emoji: '🛝',
+            svg: '<svg viewBox="0 0 52 52" width="44" height="44">' +
+                '<path d="M5 47 L17 14 L29 47" fill="none" stroke="#5d4037" stroke-width="2.5"/>' +
+                '<line x1="12" y1="21" x2="12" y2="33" stroke="#5d4037" stroke-width="1.5"/>' +
+                '<line x1="22" y1="21" x2="22" y2="33" stroke="#5d4037" stroke-width="1.5"/>' +
+                '<rect x="9" y="33" width="16" height="3.5" rx="1.5" fill="#8d6e63"/>' +
+                '<line x1="29" y1="47" x2="48" y2="47" stroke="#5d4037" stroke-width="2.5"/>' +
+                '<path d="M32 47 L45 47 L39 34 Z" fill="#a1887f" stroke="#5d4037" stroke-width="1"/>' +
+                '<rect x="28" y="31" width="20" height="3.5" rx="1.5" fill="#8d6e63" transform="rotate(-10 38 33)"/>' +
+                '</svg>',
+        },
+        stroller: { name: '3 carritos para pasear niños', emoji: '🚗' },
+        pool: { name: 'Pileta con tobogán', emoji: '🏊' },
+    };
+    const PRIZE_ORDER = ['ball', 'swing', 'stroller', 'pool'];
+
+    const PICKUP_R = 28;
+    const SPEED = 235;
+
+    const state = {
+        running: false,
+        over: false,
+        won: false,
+        score: 0,
+        lives: 3,
+        level: 1,
+        missionIndex: 0,
+        mission: null,
+        cleanCount: 0,
+        gender: 'boy',
+        player: { x: 450, y: 460, vx: 0, vy: 0, dir: { x: 0, y: -1 }, bob: 0 },
+        keys: {},
+        items: [],
+        prizes: [],
+        people: [],
+        playBall: null,
+        placement: false,
+        selectedPrize: null,
+        selectedVariant: null,
+        ballStage: null,
+        lastCollected: null,
+        lastCollectedAlpha: 0,
+        timer: 0,
+        timeLimit: 50,
+        shake: 0,
+        particles: [],
+        popups: [],
+        bob: 0,
+        lastTime: 0,
+    };
+
+    let audioCtx = null;
+
+    // ---------- Utilidades ----------
+    const $ = (id) => document.getElementById(id);
+
+    function rand(items) { return items[Math.floor(Math.random() * items.length)]; }
+
+    function dist(ax, ay, bx, by) { return Math.hypot(bx - ax, by - ay); }
+
+    function lerpColor(a, b, t) {
+        const pa = parseInt(a.slice(1), 16);
+        const pb = parseInt(b.slice(1), 16);
+        const ar = (pa >> 16) & 255, ag = (pa >> 8) & 255, ab = pa & 255;
+        const br = (pb >> 16) & 255, bg = (pb >> 8) & 255, bb = pb & 255;
+        const r = Math.round(ar + (br - ar) * t);
+        const g = Math.round(ag + (bg - ag) * t);
+        const bl = Math.round(ab + (bb - ab) * t);
+        return `rgb(${r},${g},${bl})`;
+    }
+
+    function roundedRect(x, y, w, h, r) {
+        r = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+    }
+
+    function randomSpot(avoidItems = true) {
+        for (let i = 0; i < 200; i++) {
+            const x = BOUNDS.x1 + Math.random() * (BOUNDS.x2 - BOUNDS.x1);
+            const y = BOUNDS.y1 + Math.random() * (BOUNDS.y2 - BOUNDS.y1);
+            if (dist(x, y, state.player.x, state.player.y) < 60) continue;
+            if (avoidItems && state.items.some((it) => dist(x, y, it.x, it.y) < 55)) continue;
+            return { x, y };
+        }
+        return { x: 450, y: 300 };
+    }
+
+    // ---------- Audio ----------
+    function ensureAudio() {
+        if (!audioCtx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (AC) audioCtx = new AC();
+        }
+        return audioCtx;
+    }
+
+    function tone(freq, dur, type = 'sine', vol = 0.2, when = 0) {
+        const c = ensureAudio();
+        if (!c) return;
+        const o = c.createOscillator();
+        const g = c.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        const t = c.currentTime + when;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g).connect(c.destination);
+        o.start(t);
+        o.stop(t + dur + 0.05);
+    }
+
+    function sfxPick() { tone(440, 0.08, 'sine', 0.2); tone(660, 0.08, 'sine', 0.18, 0.06); }
+    function sfxGood() { tone(523, 0.12, 'sine', 0.25); tone(784, 0.2, 'sine', 0.25, 0.09); }
+    function sfxBad() { tone(180, 0.25, 'sawtooth', 0.22); tone(120, 0.3, 'sawtooth', 0.18, 0.1); }
+    function sfxHint() { tone(350, 0.08, 'triangle', 0.12); }
+    function sfxLevel() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.15, 'square', 0.16, i * 0.1)); }
+    function sfxWin() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.2, 'triangle', 0.2, i * 0.12)); }
+    function sfxGameOver() { [400, 300, 200, 100].forEach((f, i) => tone(f, 0.2, 'sawtooth', 0.18, i * 0.15)); }
+
+    // ---------- Misiones ----------
+    function spawnMissionItems(targetRemaining) {
+        // re-disemina solo los residuos de la misión actual que faltan (deja los de las demás)
+        const mission = state.mission;
+        const pool = ITEMS.filter((it) => mission.accepts.includes(it.emoji));
+        const targetCount = Math.max(0, targetRemaining);
+        state.items = state.items.filter((it) => it.missionIdx !== state.missionIndex);
+        for (let i = 0; i < targetCount; i++) {
+            const it = rand(pool);
+            const spot = randomSpot(true);
+            state.items.push({ ...it, missionIdx: state.missionIndex, x: spot.x, y: spot.y });
+        }
+    }
+
+    function spawnAllItems() {
+        // todo lo que el personaje va a recoger en todo el juego, de una vez
+        state.items = [];
+        MISSIONS.forEach((m, mi) => {
+            const pool = ITEMS.filter((it) => m.accepts.includes(it.emoji));
+            for (let i = 0; i < m.target; i++) {
+                const it = rand(pool);
+                const spot = randomSpot(true);
+                state.items.push({ ...it, missionIdx: mi, x: spot.x, y: spot.y });
+            }
+        });
+    }
+
+    function startMission(index, keepPos) {
+        const m = MISSIONS[Math.min(index, MAX_LEVEL - 1)];
+        state.level = index + 1;
+        state.missionIndex = index;
+        state.mission = { accepts: m.accepts, name: m.name, icon: m.icon, target: m.target, count: 0, prize: m.prize };
+        state.timeLimit = 15 + m.target * 6;
+        state.timer = state.timeLimit;
+        if (!keepPos) {
+            state.player.x = 450;
+            state.player.y = 460;
+            state.player.dir = { x: 0, y: -1 };
+        }
+        if (!keepPos) spawnAllItems();
+        updateHUD();
+    }
+
+    function resetGame() {
+        state.score = 0;
+        state.lives = 3;
+        state.over = false;
+        state.won = false;
+        state.particles = [];
+        state.popups = [];
+        state.shake = 0;
+        state.prizes = [];
+        state.people = [];
+        state.playBall = null;
+        state.placement = false;
+        state.selectedPrize = null;
+        state.selectedVariant = null;
+        state.ballStage = null;
+        state.cleanCount = 0;
+        state.running = true;
+        hideSpeech();
+        $('missionBanner').classList.remove('hidden');
+        $('progressBar').classList.remove('hidden');
+        $('placementBanner').classList.add('hidden');
+        $('prizeSlots').dataset.built = '';
+        updateBoard();
+        startMission(0);
+        hideScreens();
+        updateHUD();
+    }
+
+    // ---------- Acciones ----------
+    function tryPickup() {
+        for (let i = 0; i < state.items.length; i++) {
+            const it = state.items[i];
+            if (dist(state.player.x, state.player.y, it.x, it.y) <= PICKUP_R) {
+                // solo se puede agarrar lo que pide la misión
+                if (!state.mission.accepts.includes(it.emoji)) continue;
+                state.items.splice(i, 1);
+                const pts = 15;
+                state.score += pts;
+                state.lastCollected = it.emoji;
+                state.lastCollectedAlpha = 1;
+                spawnParticles(it.x, it.y, '#ffd54f');
+                popup(it.x, it.y - 20, `+${pts}`, '#fff176');
+                showFact(it.fact);
+                sfxPick();
+
+                state.mission.count++;
+                if (state.mission.count >= state.mission.target) {
+                    completeMission();
+                }
+                updateHUD();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // ---------- Premios y tablero ----------
+    function grantPrize(type) {
+        const pr = state.prizes.find((p) => p.type === type);
+        if (pr) { pr.owned = true; }
+        else { state.prizes.push({ type, owned: true, placed: false, x: 0, y: 0 }); }
+        popup(450, 220, `¡Premio: ${PRIZES_INFO[type].name}!`, '#fff176');
+        sfxLevel();
+        updateBoard();
+    }
+
+    function selectPrize(type) {
+        const pr = state.prizes.find((p) => p.type === type);
+        if (!pr || !pr.owned || pr.placed) { sfxHint(); return; }
+        if (type === 'ball') {
+            // elegir qué arco poner con la pelota
+            state.selectedPrize = null;
+            show('ballChoice');
+            return;
+        }
+        state.selectedPrize = state.selectedPrize === type ? null : type;
+        updateBoard();
+        sfxPick();
+    }
+
+    function chooseBallVariant(variant) {
+        state.selectedPrize = 'ball';
+        state.selectedVariant = variant;
+        state.ballStage = 'arch';
+        hideScreens();
+        bannerText('Primero colocá el arco 🥅');
+        showFact('Primero colocá el arco en el parque y después la pelota.');
+        updateBoard();
+        sfxPick();
+    }
+
+    function placePrizeAt(x, y) {
+        if (state.selectedPrize === 'ball') {
+            const pr = state.prizes.find((p) => p.type === 'ball');
+            if (!pr || !pr.owned || pr.placed) { sfxHint(); return; }
+            if (state.ballStage === 'arch') {
+                pr.archX = x;
+                pr.archY = y;
+                pr.variant = state.selectedVariant;
+                state.ballStage = 'ball';
+                bannerText('Ahora colocá la pelota ⚽');
+                popup(x, y - 40, 'Arco colocado', '#fff176');
+                sfxPick();
+                return;
+            }
+            if (state.ballStage === 'ball') {
+                pr.ballX = x;
+                pr.ballY = y;
+                pr.placed = true;
+                state.selectedPrize = null;
+                state.selectedVariant = null;
+                state.ballStage = null;
+                spawnParticles(x, y, '#ffd54f');
+                popup(x, y - 40, `${PRIZES_INFO.ball.name} colocado`, '#fff176');
+                sfxGood();
+                updateBoard();
+                if (state.prizes.every((p) => p.placed)) finishPlacement();
+            }
+            return;
+        }
+        const pr = state.prizes.find((p) => p.type === state.selectedPrize);
+        if (!pr || !pr.owned || pr.placed) { sfxHint(); return; }
+        pr.placed = true;
+        pr.x = x;
+        pr.y = y;
+        pr.variant = null;
+        state.selectedPrize = null;
+        state.selectedVariant = null;
+        spawnParticles(x, y, '#ffd54f');
+        popup(x, y - 40, `${PRIZES_INFO[pr.type].name} colocado`, '#fff176');
+        sfxGood();
+        updateBoard();
+        if (state.prizes.every((p) => p.placed)) {
+            finishPlacement();
+        }
+    }
+
+    function bannerText(text) {
+        const span = $('placementBanner').querySelector('span');
+        if (span) span.textContent = text;
+    }
+
+    function updateBoard() {
+        const slots = $('prizeSlots');
+        if (!slots.dataset.built) {
+            slots.innerHTML = '';
+            PRIZE_ORDER.forEach((type) => {
+                const div = document.createElement('div');
+                div.className = 'prize-slot locked';
+                div.dataset.type = type;
+                slots.appendChild(div);
+            });
+            slots.dataset.built = '1';
+        }
+        PRIZE_ORDER.forEach((type) => {
+            const div = slots.querySelector(`[data-type="${type}"]`);
+            const pr = state.prizes.find((p) => p.type === type);
+            const info = PRIZES_INFO[type];
+            div.innerHTML = pr && pr.owned ? (info.svg || info.emoji) : '🔒';
+            div.classList.toggle('locked', !(pr && pr.owned));
+            div.classList.toggle('selected', state.selectedPrize === type);
+            div.classList.toggle('placed', !!(pr && pr.placed));
+        });
+    }
+
+    function enterPlacement() {
+        state.placement = true;
+        state.running = false;
+        state.selectedPrize = null;
+        state.selectedVariant = null;
+        state.ballStage = null;
+        state.player.x = 450;
+        state.player.y = 460;
+        hideScreens();
+        $('placementBanner').classList.remove('hidden');
+        showFact('Elegí un premio del tablero y hacé clic donde quieras colocarlo.');
+        updateBoard();
+    }
+
+    function finishPlacement() {
+        state.placement = false;
+        state.selectedPrize = null;
+        $('placementBanner').classList.add('hidden');
+        state.running = true;
+        showSpeech('¡El parque quedó hermoso! ¡Ahora abriremos el parque! 💚');
+        setTimeout(() => {
+            hideSpeech();
+            startParkOpening();
+        }, 5000);
+    }
+
+    // ---------- Apertura del parque ----------
+    const S_SWING = 1.7 * 1.25;
+    const S_CAR = 1.7 * 1.2;
+
+    function addChild(game, baseX, baseY, col, side) {
+        const from = [-30 - state.people.length * 15, 170 + state.people.length * 20];
+        const person = {
+            x: from[0], y: from[1], tx: baseX, ty: baseY,
+            ox: from[0], oy: from[1],
+            shirt: col.shirt, hair: col.hair, type: 'child', game,
+            baseX, baseY, side: side || 1,
+            arrived: false, moving: true, playPhase: state.people.length * 0.4, seed: state.people.length,
+        };
+        state.people.push(person);
+        return person;
+    }
+
+    function startParkOpening() {
+        const swingPr = state.prizes.find((p) => p.type === 'swing');
+        const poolPr = state.prizes.find((p) => p.type === 'pool');
+        const carPr = state.prizes.find((p) => p.type === 'stroller');
+        const ballPr = state.prizes.find((p) => p.type === 'ball');
+
+        // adultos que entran al parque
+        const adults = [
+            { from: [-20, 260], to: [130, 290], shirt: '#7e57c2', hair: '#4e342e' },
+            { from: [W + 20, 230], to: [W - 130, 250], shirt: '#26a69a', hair: '#212121' },
+            { from: [-20, 430], to: [190, 400], shirt: '#ef6c00', hair: '#6d4c41' },
+            { from: [W + 20, 420], to: [W - 160, 410], shirt: '#ec407a', hair: '#5d4037' },
+        ];
+        adults.forEach((a, i) => {
+            state.people.push({
+                x: a.from[0], y: a.from[1], tx: a.to[0], ty: a.to[1],
+                ox: a.from[0], oy: a.from[1],
+                shirt: a.shirt, hair: a.hair, type: 'adult', game: null,
+                arrived: false, moving: true, playPhase: i * 0.4, seed: i,
+            });
+        });
+
+        // niños jugando en los juegos colocados
+        const colors = [
+            { shirt: '#42a5f5', hair: '#4e342e' },
+            { shirt: '#66bb6a', hair: '#ffb300' },
+            { shirt: '#ff7043', hair: '#212121' },
+            { shirt: '#ab47bc', hair: '#6d4c41' },
+            { shirt: '#26c6da', hair: '#4e342e' },
+            { shirt: '#ffca28', hair: '#5d4037' },
+            { shirt: '#f48fb1', hair: '#4e342e' },
+            { shirt: '#80cbc4', hair: '#212121' },
+        ];
+        let c = 0;
+        const next = () => colors[c++ % colors.length];
+
+        if (swingPr) {
+            // columpio: un niño se columpia
+            addChild('swing', swingPr.x - 46 * S_SWING, swingPr.y - 10 * S_SWING, next());
+            // sube y baja: un niño de cada lado
+            addChild('seesaw', swingPr.x + 38 * S_SWING, swingPr.y - 10 * S_SWING, next(), 1);
+            addChild('seesaw', swingPr.x + 106 * S_SWING, swingPr.y - 10 * S_SWING, next(), -1);
+        }
+        if (poolPr) {
+            // pileta: nadan y chapotean
+            addChild('pool', poolPr.x - 10, poolPr.y, next());
+            addChild('pool', poolPr.x - 30, poolPr.y, next());
+        }
+        if (carPr) {
+            // carritos: un niño por carro
+            addChild('cars', carPr.x - 110 + 16, carPr.y + 6, next());
+            addChild('cars', carPr.x + 110 - 16, carPr.y + 6, next());
+            addChild('cars', carPr.x + 18, carPr.y - 69, next());
+        }
+        if (ballPr && ballPr.ballX != null) {
+            // pelota según el arco elegido
+            const kid = addChild('ball', ballPr.ballX - 50, ballPr.ballY, next());
+            const arc = ballPr.variant === 'basket' ? 40 : ballPr.variant === 'volley' ? 24 : 5;
+            const ay = ballPr.variant === 'basket' ? ballPr.archY - 46 : ballPr.variant === 'volley' ? ballPr.archY - 55 : ballPr.archY - 4;
+            state.playBall = { t: 0, arc, ax: ballPr.archX, ay, child: kid };
+        }
+    }
+
+    function drawPerson(p) {
+        const x = p.ox;
+        const y = p.oy;
+        const step = p.moving ? Math.sin(p.walk * 8) : 0;
+        // sombra
+        ctx.fillStyle = '#4e944e';
+        ctx.beginPath();
+        ctx.ellipse(x, y + 18, 20, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // piernas y pies
+        ctx.strokeStyle = '#263238';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x - 6, y + 8); ctx.lineTo(x - 8 - step * 3, y + 17);
+        ctx.moveTo(x + 6, y + 8); ctx.lineTo(x + 8 + step * 3, y + 17);
+        ctx.stroke();
+        // cuerpo (vista superior)
+        ctx.fillStyle = p.shirt;
+        ctx.beginPath();
+        ctx.ellipse(x, y - 5, 15, 21, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // brazos
+        ctx.strokeStyle = p.shirt;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(x - 18, y - 2); ctx.lineTo(x - 24, y + 5);
+        ctx.moveTo(x + 18, y - 2); ctx.lineTo(x + 24, y + 5);
+        ctx.stroke();
+        // cabeza
+        ctx.fillStyle = '#ffcc80';
+        ctx.beginPath();
+        ctx.arc(x, y - 25, 17, 0, Math.PI * 2);
+        ctx.fill();
+        // pelo (media luna)
+        ctx.fillStyle = p.hair;
+        ctx.beginPath();
+        ctx.arc(x, y - 31, 17, Math.PI, Math.PI * 2);
+        ctx.fill();
+        ctx.fillRect(x - 17, y - 31, 34, 4);
+        // ojos
+        ctx.fillStyle = '#3e2723';
+        ctx.beginPath();
+        ctx.arc(x - 6, y - 25, 2.3, 0, Math.PI * 2);
+        ctx.arc(x + 6, y - 25, 2.3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawPeople() {
+        state.people.forEach(drawPerson);
+    }
+
+    function drawPlayBall() {
+        const pb = state.playBall;
+        if (!pb || !pb.child) return;
+        const s = pb.t;
+        const cx = pb.child.ox;
+        const cy = pb.child.oy - 22;
+        const x = cx + (pb.ax - cx) * s;
+        const y = cy + (pb.ay - cy) * s - pb.arc * Math.sin(Math.PI * s);
+        // sombra
+        ctx.fillStyle = '#4e944e';
+        ctx.beginPath();
+        ctx.ellipse(x, cy + 16, 10, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // pelota
+        ctx.fillStyle = '#ffd54f';
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#b28704';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    function completeMission() {
+        state.mission.completed = true;
+        sfxLevel();
+        updateHUD();
+
+        // premio de la misión
+        grantPrize(state.mission.prize);
+
+        // el parque se ve más limpio
+        state.cleanCount = Math.min(MAX_LEVEL, state.cleanCount + 1);
+
+        if (state.missionIndex >= MAX_LEVEL - 1) {
+            popup(450, 260, '¡Ganaste! Completaste todas las misiones 💚', '#c8e6c9');
+            win();
+        } else {
+            popup(450, 260, '¡Misión completada!', '#a5d6a7');
+            setTimeout(() => { startMission(state.missionIndex + 1, true); }, 1200);
+        }
+    }
+
+    function loseLife() {
+        state.lives--;
+        state.shake = 1;
+        updateHUD();
+        if (state.lives <= 0) {
+            gameOver();
+        }
+    }
+
+    function onTimeout() {
+        // se acabó el tiempo: se pierde una vida y se re-diseminan los residuos
+        if (state.mission && state.mission.completed) return;
+        sfxBad();
+        loseLife();
+        if (state.lives > 0) {
+            const remaining = state.mission.target - state.mission.count;
+            spawnMissionItems(remaining);
+            state.timer = state.timeLimit;
+        }
+    }
+
+    function gameOver() {
+        state.running = false;
+        state.over = true;
+        sfxGameOver();
+        show('gameOverScreen');
+    }
+
+    function win() {
+        state.running = false;
+        state.won = true;
+        $('missionBanner').classList.add('hidden');
+        $('progressBar').classList.add('hidden');
+        sfxWin();
+        showSpeech('¡Excelente! Terminamos de limpiar, ahora vamos a poner algunos juegos');
+        setTimeout(() => {
+            hideSpeech();
+            enterPlacement();
+        }, 4500);
+    }
+
+    // ---------- Diálogo del personaje ----------
+    function showSpeech(text) {
+        $('speechFace').textContent = state.gender === 'girl' ? '👧' : '👦';
+        $('speechText').textContent = text;
+        $('speechBubble').classList.remove('hidden');
+    }
+
+    function hideSpeech() {
+        $('speechBubble').classList.add('hidden');
+    }
+
+    // ---------- UI ----------
+    function hideScreens() {
+        ['selectScreen', 'startScreen', 'gameOverScreen', 'ballChoice'].forEach((id) => $(id).classList.add('hidden'));
+    }
+
+    function show(id) {
+        hideScreens();
+        $(id).classList.remove('hidden');
+    }
+
+    function showFact(text) {
+        const b = $('factBubble');
+        b.textContent = text;
+        b.classList.remove('hidden');
+        clearTimeout(showFact._t);
+        showFact._t = setTimeout(() => b.classList.add('hidden'), 3200);
+    }
+
+    function updateHUD() {
+        $('levelDisplay').textContent = `📈 Misión: ${state.missionIndex + 1}/${MAX_LEVEL}`;
+        $('livesDisplay').textContent = '❤️ '.repeat(Math.max(0, state.lives)) + '🖤 '.repeat(Math.max(0, 3 - state.lives));
+        $('timerDisplay').textContent = `⏱ ${Math.ceil(Math.max(0, state.timer))}`;
+
+        if (state.mission) {
+            $('missionText').textContent = `${state.mission.icon} ${state.mission.name}`;
+            $('missionProgress').textContent = `${state.mission.count}/${state.mission.target}`;
+        }
+
+        const frac = Math.max(0, state.timer) / state.timeLimit;
+        const fill = $('progressFill');
+        fill.style.width = (frac * 100) + '%';
+        fill.style.background = frac > 0.5 ? '#4caf50' : frac > 0.25 ? '#ffb300' : '#e53935';
+    }
+
+    // ---------- Efectos ----------
+    function spawnParticles(x, y, color) {
+        for (let i = 0; i < 16; i++) {
+            state.particles.push({ x, y, vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5, life: 1, color });
+        }
+    }
+
+    function popup(x, y, text, color) {
+        state.popups.push({ x, y, text, color, life: 1.4 });
+    }
+
+    // ---------- Dibujo ----------
+    const DIRT = []; // parches de tierra sucia
+    const STAIN = []; // manchas
+    for (let i = 0; i < 18; i++) {
+        DIRT.push({ x: 60 + (i * 47) % 780, y: 90 + (i * 63) % 440, r: 18 + (i % 5) * 8 });
+    }
+    for (let i = 0; i < 16; i++) {
+        STAIN.push({ x: 50 + (i * 53) % 800, y: 100 + (i * 71) % 430, r: 6 + (i % 4) * 3 });
+    }
+
+    function drawBackground() {
+        const clean = state.cleanCount / MAX_LEVEL;
+
+        // cielo: pasa de gris apagado a azul limpio
+        const g = ctx.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, lerpColor('#6b7280', '#7ec8e3', clean));
+        g.addColorStop(0.5, lerpColor('#8a9a7b', '#a8e6cf', clean));
+        g.addColorStop(1, lerpColor('#5a6648', '#8bc34a', clean));
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+
+        // césped: de seco y amarronado a verde vivo
+        const grass = ctx.createLinearGradient(0, 0, 0, H);
+        grass.addColorStop(0, lerpColor('#8a8a5c', '#8fd987', clean));
+        grass.addColorStop(1, lerpColor('#6e7a45', '#5cb85c', clean));
+        ctx.fillStyle = grass;
+        ctx.fillRect(0, 0, W, H);
+
+        // manchas de barro / tierra (desaparecen al limpiar)
+        if (clean < 1) {
+            DIRT.forEach((d) => {
+                ctx.fillStyle = '#6e5f3c';
+                ctx.beginPath();
+                ctx.ellipse(d.x, d.y, d.r, d.r * 0.65, d.x % 1, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#46371e';
+                ctx.beginPath();
+                ctx.ellipse(d.x + 6, d.y + 4, d.r * 0.5, d.r * 0.3, 0, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // manchas oscuras (aceite, mugre)
+            STAIN.forEach((s) => {
+                ctx.fillStyle = '#282d28';
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // césped con relieves
+        ctx.fillStyle = '#a5dfa5';
+        for (let i = 0; i < 40; i++) {
+            const x = (i * 137.5) % W, y = (i * 89.3) % H;
+            ctx.beginPath();
+            ctx.ellipse(x, y, 26, 14, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // senderos: de embarrados a limpios
+        ctx.fillStyle = lerpColor('#8a7a55', '#d9c9a6', clean);
+        ctx.fillRect(30, 285, W - 60, 50);
+        ctx.fillRect(425, 60, 50, H - 120);
+        ctx.strokeStyle = lerpColor('#7a6b48', '#c4b58a', clean);
+        ctx.lineWidth = 2;
+        ctx.strokeRect(30, 285, W - 60, 50);
+        ctx.strokeRect(425, 60, 50, H - 120);
+        // pisadas en el barro (solo si está sucio)
+        if (clean < 1) {
+            ctx.fillStyle = '#322d1e';
+            for (let i = 0; i < 40; i++) {
+                const x = (i * 61) % W, y = (i * 23) % 50 + 285;
+                if (Math.random() > 0.5) continue;
+                ctx.beginPath();
+                ctx.arc(x, y, 3 + (i % 3), 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // flores: de marchitas a florecidas
+        FLOWERS.forEach(([x, y]) => {
+            ctx.fillStyle = '#5c9d57';
+            ctx.beginPath();
+            ctx.arc(x, y + 2, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = lerpColor('#9c9a5c', '#fff176', clean);
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = lerpColor('#6b6b3d', '#e57373', clean);
+            ctx.beginPath();
+            ctx.arc(x, y, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // papeles rotos sueltos (desaparecen al limpiar)
+        if (clean < 1) {
+            ctx.fillStyle = '#c8cbc4';
+            for (let i = 0; i < 12; i++) {
+                const x = (i * 89 + 20) % (W - 40) + 20;
+                const y = (i * 131 + 60) % (H - 60) + 70;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate((i % 4) * 0.4);
+                ctx.fillRect(-5, -3, 10 + (i % 4) * 3, 6);
+                ctx.restore();
+            }
+        }
+    }
+
+    function drawTree(x, y, s = 1) {
+        const clean = state.cleanCount / MAX_LEVEL;
+        ctx.fillStyle = '#559b54';
+        ctx.beginPath();
+        ctx.ellipse(x + 6, y + 6, 26 * s, 22 * s, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = lerpColor('#7a6a45', '#2e7d32', clean);
+        ctx.beginPath();
+        ctx.arc(x, y, 26 * s, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = lerpColor('#8a7a50', '#388e3c', clean);
+        ctx.beginPath();
+        ctx.arc(x - 6 * s, y - 6 * s, 17 * s, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = lerpColor('#6e5e3d', '#43a047', clean);
+        ctx.beginPath();
+        ctx.arc(x + 4 * s, y + 4 * s, 12 * s, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawItems() {
+        state.items.forEach((it) => {
+            const isTarget = state.mission && state.mission.accepts.includes(it.emoji);
+            const b = Math.sin(state.bob * 3 + it.x) * 2;
+
+            if (isTarget) {
+                // sombra
+                ctx.fillStyle = '#4e944e';
+                ctx.beginPath();
+                ctx.ellipse(it.x, it.y + 16, 16, 7, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // fondo claro para que se vea nítido
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(it.x, it.y - 4 + b, 20, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#b0b0b0';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(it.x, it.y - 4 + b, 20, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.lineWidth = 1;
+
+                // residuo en grande
+                drawItemGraphic(it.emoji, it.x, it.y - 2 + b, 34);
+
+                // anillo pulsante
+                const pulse = 1 + 0.25 * Math.sin(state.bob * 4 + it.x);
+                ctx.strokeStyle = '#ffd600';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(it.x, it.y - 4 + b, 24 * pulse, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.lineWidth = 1;
+            } else {
+                // residuos que no se pueden agarrar: decoración simple
+                drawItemGraphic(it.emoji, it.x, it.y - 4 + b, 22);
+            }
+        });
+    }
+
+    function drawItemGraphic(emoji, x, y, size) {
+        if (emoji === '🍌') return drawBananaPeel(x, y);
+        if (emoji === '🍉') return drawWatermelonRind(x, y);
+        if (emoji === '🍎') return drawAppleCore(x, y);
+        if (emoji === '🧴') return drawPlasticBottle(x, y);
+        if (emoji === '📄') return drawCrumpledPaper(x, y);
+        if (emoji === '📦') return drawUsedBox(x, y);
+        if (emoji === '📰') return drawUsedNewspaper(x, y);
+        ctx.font = size + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(emoji, x, y);
+    }
+
+    function drawCrumpledPaper(x, y) {
+        // papel arrugado y usado
+        ctx.save();
+        ctx.translate(x, y);
+        // silueta irregular con esquinas rotas
+        ctx.fillStyle = '#ece6d9';
+        ctx.beginPath();
+        ctx.moveTo(-14, 8);
+        ctx.quadraticCurveTo(-18, -2, -12, -9);
+        ctx.quadraticCurveTo(-7, -15, 2, -13);
+        ctx.quadraticCurveTo(10, -17, 16, -8);
+        ctx.quadraticCurveTo(19, -2, 15, 5);
+        ctx.lineTo(18, 8);
+        ctx.lineTo(14, 7);
+        ctx.lineTo(16, 11);
+        ctx.quadraticCurveTo(8, 16, 0, 13);
+        ctx.quadraticCurveTo(-8, 17, -14, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#c9c0ab';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        // arrugas y dobleces
+        ctx.strokeStyle = '#c9c0ab';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(-10, -2); ctx.quadraticCurveTo(-4, 1, 2, -3);
+        ctx.moveTo(-3, 6); ctx.quadraticCurveTo(3, 3, 8, 7);
+        ctx.moveTo(-7, 11); ctx.quadraticCurveTo(0, 9, 5, 12);
+        ctx.moveTo(2, -9); ctx.quadraticCurveTo(7, -5, 12, -6);
+        ctx.stroke();
+        // manchita de tierra
+        ctx.fillStyle = '#d8cdb8';
+        ctx.beginPath();
+        ctx.ellipse(6, -1, 2.5, 2, 0.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function drawUsedBox(x, y) {
+        // caja de cartón aplastada y usada
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.fillStyle = '#c68b53';
+        ctx.beginPath();
+        ctx.moveTo(-12, 10);
+        ctx.quadraticCurveTo(-16, 4, -13, -2);
+        ctx.lineTo(-9, -6);
+        ctx.lineTo(0, -9);
+        ctx.lineTo(8, -5);
+        ctx.lineTo(13, -1);
+        ctx.quadraticCurveTo(17, 3, 13, 8);
+        ctx.quadraticCurveTo(8, 12, 0, 12);
+        ctx.quadraticCurveTo(-7, 13, -12, 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#9a6a3c';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // abolladuras
+        ctx.strokeStyle = '#9a6a3c';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-10, 3); ctx.quadraticCurveTo(-4, 6, 1, 3);
+        ctx.moveTo(3, 7); ctx.quadraticCurveTo(7, 5, 10, 8);
+        ctx.moveTo(-6, -3); ctx.quadraticCurveTo(0, -6, 6, -4);
+        ctx.stroke();
+        // cinta adhesiva
+        ctx.fillStyle = '#c8a15e';
+        ctx.fillRect(-2, -9, 4, 21);
+        // esquina despegada
+        ctx.strokeStyle = '#9a6a3c';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(13, -1);
+        ctx.lineTo(16, -4);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function drawUsedNewspaper(x, y) {
+        // diario doblado y usado
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(0.08);
+        ctx.fillStyle = '#e6e0d3';
+        ctx.beginPath();
+        ctx.moveTo(-14, 10);
+        ctx.quadraticCurveTo(-18, -4, -10, -10);
+        ctx.quadraticCurveTo(-2, -16, 7, -12);
+        ctx.quadraticCurveTo(14, -9, 16, 0);
+        ctx.quadraticCurveTo(18, 8, 11, 12);
+        ctx.quadraticCurveTo(4, 15, -5, 13);
+        ctx.quadraticCurveTo(-10, 12, -14, 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#bdb3a0';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        // doblez del diario
+        ctx.strokeStyle = '#bdb3a0';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(-4, -12);
+        ctx.lineTo(2, 15);
+        ctx.moveTo(-9, -5);
+        ctx.lineTo(7, -8);
+        ctx.stroke();
+        // titular y texto
+        ctx.fillStyle = '#5d5a55';
+        ctx.fillRect(-10, -6, 14, 3);
+        ctx.fillRect(-10, -1, 18, 2);
+        ctx.fillRect(-10, 3, 15, 2);
+        ctx.fillRect(-10, 7, 11, 2);
+        // manchita
+        ctx.fillStyle = '#d0c7b4';
+        ctx.beginPath();
+        ctx.ellipse(9, 4, 3, 2.5, 0.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function drawPlasticBottle(x, y) {
+        // botella de plástico azul
+        ctx.save();
+        ctx.translate(x, y);
+        // cuerpo
+        ctx.fillStyle = '#1e88e5';
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(-9, -2, 18, 20, 4) : ctx.rect(-9, -2, 18, 20);
+        ctx.fill();
+        // cuello
+        ctx.fillStyle = '#1e88e5';
+        ctx.fillRect(-3, -9, 6, 8);
+        // tapa
+        ctx.fillStyle = '#1565c0';
+        ctx.fillRect(-4, -12, 8, 4);
+        // brillo
+        ctx.fillStyle = '#90caf9';
+        ctx.fillRect(-6, 1, 3, 12);
+        // etiqueta
+        ctx.fillStyle = '#e3f2fd';
+        ctx.fillRect(-9, 6, 18, 6);
+        ctx.fillStyle = '#1565c0';
+        ctx.fillRect(-6, 8, 12, 2);
+        ctx.restore();
+    }
+
+    function drawBananaPeel(x, y) {
+        // cáscara de plátano (media luna) sin pulpa
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.fillStyle = '#fdd835';
+        ctx.beginPath();
+        ctx.moveTo(-16, 8);
+        ctx.quadraticCurveTo(-18, -14, 0, -17);
+        ctx.quadraticCurveTo(18, -14, 16, 8);
+        ctx.quadraticCurveTo(11, 3, 7, 3);
+        ctx.quadraticCurveTo(4, 7, 0, 7);
+        ctx.quadraticCurveTo(-4, 7, -7, 3);
+        ctx.quadraticCurveTo(-11, 3, -16, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#f9a825';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        // puntas marrones (restos del tallo)
+        ctx.fillStyle = '#6d4c41';
+        ctx.beginPath();
+        ctx.ellipse(-15, 7, 3, 5, 0.45, 0, Math.PI * 2);
+        ctx.ellipse(15, 7, 3, 5, -0.45, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function drawWatermelonRind(x, y) {
+        // cáscara de sandía vaciada (media luna verde con borde blanco, sin pulpa roja)
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.fillStyle = '#43a047';
+        ctx.beginPath();
+        ctx.moveTo(-18, 7);
+        ctx.quadraticCurveTo(-19, -14, 0, -17);
+        ctx.quadraticCurveTo(19, -14, 18, 7);
+        ctx.quadraticCurveTo(12, 12, 0, 12);
+        ctx.quadraticCurveTo(-12, 12, -18, 7);
+        ctx.closePath();
+        ctx.fill();
+        // franjas oscuras típicas del melón
+        ctx.strokeStyle = '#2e7d32';
+        ctx.lineWidth = 2.5;
+        for (let i = -2; i <= 2; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * 6, -10);
+            ctx.quadraticCurveTo(i * 6 + 1, -2, i * 6, 6);
+            ctx.stroke();
+        }
+        // banda interior blanca
+        ctx.fillStyle = '#e8f5e9';
+        ctx.beginPath();
+        ctx.moveTo(-15, 6);
+        ctx.quadraticCurveTo(-16, -9, 0, -12);
+        ctx.quadraticCurveTo(16, -9, 15, 6);
+        ctx.quadraticCurveTo(10, 9, 0, 9);
+        ctx.quadraticCurveTo(-10, 9, -15, 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function drawAppleCore(x, y) {
+        // manzana completamente mordida (queda carne blanca con borde de piel roja)
+        ctx.save();
+        ctx.translate(x, y);
+        // piel roja (el contorno de lo que queda)
+        ctx.fillStyle = '#e53935';
+        ctx.beginPath();
+        ctx.moveTo(0, -14);
+        ctx.bezierCurveTo(-16, -16, -18, -2, -14, 6);
+        ctx.bezierCurveTo(-10, 14, 0, 15, 0, 13);
+        ctx.bezierCurveTo(0, 15, 10, 14, 14, 6);
+        ctx.bezierCurveTo(18, -2, 16, -16, 0, -14);
+        ctx.closePath();
+        ctx.fill();
+        // carne blanca donde se mordió (izquierda, derecha y arriba)
+        ctx.fillStyle = '#fff3e0';
+        ctx.beginPath();
+        ctx.arc(-11, 1, 9, 0, Math.PI * 2);
+        ctx.arc(11, 1, 9, 0, Math.PI * 2);
+        ctx.arc(0, -14, 7, 0, Math.PI * 2);
+        ctx.fill();
+        // semillas marrones
+        ctx.fillStyle = '#4e342e';
+        ctx.beginPath();
+        ctx.ellipse(-3, 3, 2, 3.5, 0.5, 0, Math.PI * 2);
+        ctx.ellipse(3, 3, 2, 3.5, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+        // rabito
+        ctx.strokeStyle = '#6d4c41';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(0, -11);
+        ctx.quadraticCurveTo(2, -17, 6, -18);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function kidsAt(type) {
+        return state.people.some((p) => p.arrived && p.game === type);
+    }
+
+    function drawPrizeGraphic(type, x, y, bob, variant) {
+        // x, y = punto de apoyo en el suelo
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(1.7, 1.7);
+        if (type === 'pool') ctx.scale(3.0, 3.0); // la pileta es más grande
+        else if (type === 'swing') ctx.scale(1.25, 1.25); // columpios más grandes
+        else if (type === 'stroller') ctx.scale(1.2, 1.2); // carros más grandes
+        switch (type) {
+            case 'ball_arch': {
+                // solo el arco elegido (sin la pelota)
+                if (variant === 'soccer') {
+                    // arco de fútbol
+                    ctx.strokeStyle = '#e0e0e0';
+                    ctx.lineWidth = 1;
+                    for (let i = -24; i <= 24; i += 4) {
+                        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, -30); ctx.stroke();
+                    }
+                    for (let j = 0; j >= -30; j -= 4) {
+                        ctx.beginPath(); ctx.moveTo(-26, j); ctx.lineTo(26, j); ctx.stroke();
+                    }
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(-26, 0); ctx.lineTo(-26, -30); ctx.lineTo(26, -30); ctx.lineTo(26, 0);
+                    ctx.stroke();
+                } else if (variant === 'basket') {
+                    // aro de básquet
+                    ctx.strokeStyle = '#8d6e63';
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    ctx.moveTo(18, 0); ctx.lineTo(18, -34);
+                    ctx.stroke();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(-4, -34, 16, 13);
+                    ctx.strokeStyle = '#b0b0b0';
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(-4, -34, 16, 13);
+                    ctx.strokeStyle = '#ff5722';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(0, -29, 6, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.strokeStyle = '#e0e0e0';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(-6, -23); ctx.lineTo(-4, -17); ctx.lineTo(4, -17); ctx.lineTo(6, -23);
+                    ctx.moveTo(-5, -22); ctx.lineTo(0, -16); ctx.lineTo(5, -22);
+                    ctx.moveTo(0, -23); ctx.lineTo(0, -15);
+                    ctx.stroke();
+                } else if (variant === 'volley') {
+                    // red de vóley
+                    ctx.fillStyle = '#5d4037';
+                    ctx.fillRect(-30, -34, 4, 34);
+                    ctx.fillRect(26, -34, 4, 34);
+                    ctx.strokeStyle = '#e0e0e0';
+                    ctx.lineWidth = 1;
+                    for (let i = -28; i <= 28; i += 4) {
+                        ctx.beginPath(); ctx.moveTo(i, -2); ctx.lineTo(i, -34); ctx.stroke();
+                    }
+                    for (let j = -2; j >= -34; j -= 4) {
+                        ctx.beginPath(); ctx.moveTo(-30, j); ctx.lineTo(30, j); ctx.stroke();
+                    }
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(-30, -34); ctx.lineTo(30, -34);
+                    ctx.stroke();
+                }
+                break;
+            }
+            case 'ball': {
+                // solo la pelota
+                ctx.fillStyle = '#4e944e';
+                ctx.beginPath();
+                ctx.ellipse(0, 8, 13, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffd54f';
+                ctx.beginPath();
+                ctx.arc(0, -10 + bob, 13, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff59d';
+                ctx.beginPath();
+                ctx.arc(-4, -15 + bob, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#b28704';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, -10 + bob, 13, 0, Math.PI * 2);
+                ctx.stroke();
+                break;
+            }
+            case 'swing': {
+                // columpio (más grande y a la izquierda)
+                ctx.strokeStyle = '#5d4037';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(-78, 0); ctx.lineTo(-48, -44);
+                ctx.moveTo(-18, 0); ctx.lineTo(-48, -44);
+                ctx.moveTo(-48, -44); ctx.lineTo(-38, -44);
+                ctx.stroke();
+                // asiento que se columpia cuando hay un niño
+                const swingAngle = kidsAt('swing') ? Math.sin(state.bob * 2.5) * 0.42 : 0;
+                ctx.save();
+                ctx.translate(-48, -44);
+                ctx.rotate(swingAngle);
+                ctx.strokeStyle = '#5d4037';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(-14, 0); ctx.lineTo(-14, 30);
+                ctx.moveTo(14, 0); ctx.lineTo(14, 30);
+                ctx.stroke();
+                ctx.fillStyle = '#8d6e63';
+                ctx.fillRect(-22, 30, 48, 8);
+                ctx.restore();
+                // sube y baja (más grande y a la derecha)
+                ctx.strokeStyle = '#5d4037';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(48, 0); ctx.lineTo(96, 0);
+                ctx.stroke();
+                ctx.fillStyle = '#8d6e63';
+                ctx.beginPath();
+                ctx.moveTo(52, 0); ctx.lineTo(92, 0); ctx.lineTo(72, -14);
+                ctx.closePath();
+                ctx.fill();
+                // tabla que sube y baja cuando hay niños
+                const seesawAngle = kidsAt('seesaw') ? Math.sin(state.bob * 2.5) * 0.32 : 0.14;
+                ctx.save();
+                ctx.translate(72, -10);
+                ctx.rotate(seesawAngle);
+                ctx.fillStyle = '#a1887f';
+                ctx.fillRect(-34, -5, 68, 8);
+                ctx.fillStyle = '#8d6e63';
+                ctx.fillRect(-34, -8, 4, 3);
+                ctx.fillRect(30, -8, 4, 3);
+                ctx.restore();
+                break;
+            }
+            case 'stroller': {
+                // 3 carritos para pasear niños: uno arriba de los otros dos, todos separados
+                const carsMove = kidsAt('cars');
+                const cars = [
+                    { dx: -54, dy: 4, ph: 0 },
+                    { dx: 54, dy: 4, ph: 2 },
+                    { dx: 0, dy: -34, ph: 4 },
+                ];
+                cars.forEach((c) => {
+                    const ox = carsMove ? Math.sin(state.bob * 3 + c.ph) * 3 : 0;
+                    ctx.save();
+                    ctx.translate(c.dx + ox, c.dy);
+                    // ruedas
+                    ctx.fillStyle = '#263238';
+                    ctx.beginPath();
+                    ctx.arc(-12, -3, 6, 0, Math.PI * 2);
+                    ctx.arc(12, -3, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#1b1f21';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(-12, -3, 6, 0, Math.PI * 2);
+                    ctx.arc(12, -3, 6, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.fillStyle = '#9e9e9e';
+                    ctx.beginPath();
+                    ctx.arc(-12, -3, 2.5, 0, Math.PI * 2);
+                    ctx.arc(12, -3, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    // rayos girando
+                    ctx.save();
+                    ctx.translate(-12, -3);
+                    ctx.rotate(carsMove ? state.bob * 4 : 0);
+                    ctx.strokeStyle = '#78909c';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(-4, 0); ctx.lineTo(4, 0);
+                    ctx.moveTo(0, -4); ctx.lineTo(0, 4);
+                    ctx.stroke();
+                    ctx.restore();
+                    ctx.save();
+                    ctx.translate(12, -3);
+                    ctx.rotate(carsMove ? state.bob * 4 : 0);
+                    ctx.strokeStyle = '#78909c';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(-4, 0); ctx.lineTo(4, 0);
+                    ctx.moveTo(0, -4); ctx.lineTo(0, 4);
+                    ctx.stroke();
+                    ctx.restore();
+                    // carrocería
+                    ctx.fillStyle = '#c62828';
+                    ctx.beginPath();
+                    ctx.roundRect ? ctx.roundRect(-20, -15, 40, 12, 5) : ctx.rect(-20, -15, 40, 12);
+                    ctx.fill();
+                    ctx.strokeStyle = '#8e1a1a';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    // cabina / techo
+                    ctx.fillStyle = '#e53935';
+                    ctx.beginPath();
+                    ctx.roundRect ? ctx.roundRect(-9, -25, 24, 11, 4) : ctx.rect(-9, -25, 24, 11);
+                    ctx.fill();
+                    // ventanas
+                    ctx.fillStyle = '#b3e5fc';
+                    ctx.beginPath();
+                    ctx.roundRect ? ctx.roundRect(-6, -22, 8, 6, 2) : ctx.rect(-6, -22, 8, 6);
+                    ctx.roundRect ? ctx.roundRect(5, -22, 8, 6, 2) : ctx.rect(5, -22, 8, 6);
+                    ctx.fill();
+                    // faro delantero
+                    ctx.fillStyle = '#ffeb3b';
+                    ctx.beginPath();
+                    ctx.arc(18, -11, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffeb3b';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(18, -11, 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // luces traseras
+                    ctx.fillStyle = '#ff8a80';
+                    ctx.beginPath();
+                    ctx.arc(-19, -11, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+                break;
+            }
+            case 'pool': {
+                // pileta
+                const poolAnim = kidsAt('pool');
+                // agua con superficie ondulada cuando hay niños
+                ctx.fillStyle = '#90caf9';
+                ctx.beginPath();
+                ctx.moveTo(-26, -6);
+                if (poolAnim) {
+                    for (let i = -26; i <= 20; i += 2) {
+                        ctx.lineTo(i, -6 + Math.sin(state.bob * 3 + i * 0.4) * 2);
+                    }
+                } else {
+                    ctx.lineTo(20, -6);
+                }
+                ctx.lineTo(20, 6);
+                ctx.lineTo(-26, 6);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = '#1e88e5';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(-26, -6, 46, 12);
+                break;
+            }
+        }
+        ctx.restore();
+    }
+
+    function drawPrizes() {
+        state.prizes.forEach((pr) => {
+            if (pr.type === 'ball') {
+                // el arco se dibuja apenas se coloca; la pelota cuando se coloca después
+                if (pr.archX != null && pr.archY != null) {
+                    ctx.fillStyle = '#549853';
+                    ctx.beginPath();
+                    ctx.ellipse(pr.archX, pr.archY + 6, 32, 10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    drawPrizeGraphic('ball_arch', pr.archX, pr.archY, 0, pr.variant);
+                }
+                if (pr.ballX != null && pr.ballY != null) {
+                    const bob = Math.sin(state.bob * 2 + pr.ballX) * 2;
+                    ctx.fillStyle = '#549853';
+                    ctx.beginPath();
+                    ctx.ellipse(pr.ballX, pr.ballY + 6, 16, 6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    drawPrizeGraphic('ball', pr.ballX, pr.ballY, bob, null);
+                }
+                return;
+            }
+            if (!pr.placed) return;
+            const bob = Math.sin(state.bob * 2 + pr.x) * 2;
+            ctx.fillStyle = '#549853';
+            ctx.beginPath();
+            ctx.ellipse(pr.x, pr.y + 6, 16, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            drawPrizeGraphic(pr.type, pr.x, pr.y, bob, pr.variant);
+        });
+    }
+
+    function drawCharacter() {
+        const p = state.player;
+        const bobY = Math.sin(p.bob * 8) * 2;
+        const step = Math.sin(p.bob * 8);
+        const { x, y } = p;
+
+        // sombra
+        ctx.fillStyle = '#519a52';
+        ctx.beginPath();
+        ctx.ellipse(x, y + 19, 26, 11, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (state.gender === 'girl') {
+            // pelo largo por detrás del cuerpo
+            ctx.fillStyle = '#4e342e';
+            ctx.beginPath();
+            ctx.ellipse(x, y - 8 + bobY * 0.3, 25, 26, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // cuerpo (vista superior) - remera verde claro, delgado
+        ctx.fillStyle = '#81c784';
+        ctx.beginPath();
+        ctx.ellipse(x, y - 5 + bobY * 0.3, 15, 21, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // brazos
+        ctx.strokeStyle = '#66bb6a';
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x - 18, y - 2 + bobY * 0.3);
+        ctx.lineTo(x - 26, y + 5 + bobY * 0.3);
+        ctx.stroke();
+
+        // piernas y pies (con caminata)
+        ctx.strokeStyle = '#66bb6a';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(x - 6, y + 13 + bobY * 0.3);
+        ctx.lineTo(x - 8 - step * 2, y + 23 + bobY * 0.3);
+        ctx.moveTo(x + 6, y + 13 + bobY * 0.3);
+        ctx.lineTo(x + 8 + step * 2, y + 23 + bobY * 0.3);
+        ctx.stroke();
+        ctx.fillStyle = '#263238';
+        ctx.beginPath();
+        ctx.ellipse(x - 9 - step * 2, y + 25 + bobY * 0.3, 6, 3.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 9 + step * 2, y + 25 + bobY * 0.3, 6, 3.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // cabeza
+        ctx.fillStyle = '#ffcc80';
+        ctx.beginPath();
+        ctx.arc(x, y - 25 + bobY, 17, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (state.gender === 'girl') {
+            // cara de piel al frente
+            ctx.fillStyle = '#ffcc80';
+            ctx.beginPath();
+            ctx.ellipse(x, y - 24 + bobY, 14, 13, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // flequillo
+            ctx.fillStyle = '#4e342e';
+            ctx.beginPath();
+            ctx.arc(x, y - 31 + bobY, 14, Math.PI, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(x - 14, y - 31 + bobY, 28, 4);
+            // moño arriba
+            ctx.fillStyle = '#e91e63';
+            ctx.beginPath();
+            ctx.moveTo(x - 7, y - 35 + bobY);
+            ctx.lineTo(x - 15, y - 40 + bobY);
+            ctx.lineTo(x - 15, y - 30 + bobY);
+            ctx.closePath();
+            ctx.beginPath();
+            ctx.moveTo(x + 7, y - 35 + bobY);
+            ctx.lineTo(x + 15, y - 40 + bobY);
+            ctx.lineTo(x + 15, y - 30 + bobY);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#c2185b';
+            ctx.beginPath();
+            ctx.arc(x, y - 35 + bobY, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            // pelo corto de niño (media luna superior)
+            ctx.fillStyle = '#4e342e';
+            ctx.beginPath();
+            ctx.arc(x, y - 31 + bobY, 17, Math.PI, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(x - 17, y - 31 + bobY, 34, 4);
+        }
+
+        // ojos según dirección
+        const ex = x + p.dir.x * 4;
+        const ey = y - 25 + bobY + p.dir.y * 2.5;
+        ctx.fillStyle = '#3e2723';
+        ctx.beginPath();
+        ctx.arc(ex - 6.5, ey, 2.3, 0, Math.PI * 2);
+        ctx.arc(ex + 6.5, ey, 2.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // al terminar las misiones ya no lleva la bolsa
+        if (state.won) {
+            // brazos normales colgando
+            ctx.strokeStyle = '#66bb6a';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x - 18, y - 2 + bobY * 0.3);
+            ctx.lineTo(x - 26, y + 5 + bobY * 0.3);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x + 18, y - 2 + bobY * 0.3);
+            ctx.lineTo(x + 26, y + 5 + bobY * 0.3);
+            ctx.stroke();
+            // manos
+            ctx.fillStyle = '#ffcc80';
+            ctx.beginPath();
+            ctx.arc(x - 27, y + 6 + bobY * 0.3, 4.5, 0, Math.PI * 2);
+            ctx.arc(x + 27, y + 6 + bobY * 0.3, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            // bolsa para juntar basura (adelante, en la dirección del personaje)
+            const bagX = x + p.dir.x * 22;
+            const bagY = y + p.dir.y * 22 + bobY * 0.5;
+            ctx.fillStyle = '#5da35d';
+            ctx.beginPath();
+            ctx.ellipse(bagX + 1, bagY + 5, 14, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#e0f2f1';
+            ctx.beginPath();
+            ctx.moveTo(bagX - 13, bagY - 9);
+            ctx.bezierCurveTo(bagX - 17, bagY + 8, bagX - 10, bagY + 17, bagX, bagY + 14);
+            ctx.bezierCurveTo(bagX + 10, bagY + 17, bagX + 17, bagY + 8, bagX + 13, bagY - 9);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#90a4ae';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // nudo en la punta
+            ctx.strokeStyle = '#5d4037';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(bagX - 5, bagY - 9); ctx.lineTo(bagX + 5, bagY - 9);
+            ctx.moveTo(bagX - 1, bagY - 9); ctx.lineTo(bagX, bagY - 15);
+            ctx.stroke();
+            ctx.lineWidth = 1;
+
+            // brazos conectados a las manos que agarran la bolsa
+            ctx.strokeStyle = '#81c784';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x - 18, y - 3 + bobY * 0.3);
+            ctx.lineTo(bagX - 3, bagY + 1);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x + 18, y - 3 + bobY * 0.3);
+            ctx.lineTo(bagX + 3, bagY + 1);
+            ctx.stroke();
+            // manos agarrando la bolsa
+            ctx.fillStyle = '#ffcc80';
+            ctx.beginPath();
+            ctx.arc(bagX - 3, bagY + 1, 5, 0, Math.PI * 2);
+            ctx.arc(bagX + 3, bagY + 1, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // residuo recogido mostrado brevemente
+        if (state.lastCollected) {
+            ctx.font = '32px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(state.lastCollected, x + p.dir.x * 28, y - 42 + bobY + p.dir.y * 8);
+        }
+
+        // premio seleccionado (modo colocación) en la mano como vista previa
+        if (state.selectedPrize) {
+            const bx = x + p.dir.x * 28;
+            const by = y - 34 + bobY + p.dir.y * 6;
+            if (state.selectedPrize === 'ball') {
+                if (state.ballStage === 'ball') drawPrizeGraphic('ball', bx, by, 0, null);
+                else drawPrizeGraphic('ball_arch', bx, by, 0, state.selectedVariant);
+            } else {
+                drawPrizeGraphic(state.selectedPrize, bx, by, 0, state.selectedVariant);
+            }
+        }
+    }
+
+    function drawParticles() {
+        state.particles.forEach((pt) => {
+            ctx.fillStyle = pt.color;
+            ctx.fillRect(pt.x - 3, pt.y - 3, 6, 6);
+        });
+    }
+
+    function drawPopups() {
+        state.popups.forEach((pu) => {
+            ctx.font = 'bold 18px "Segoe UI", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = '#000000';
+            ctx.shadowBlur = 3;
+            ctx.fillStyle = pu.color;
+            ctx.fillText(pu.text, pu.x, pu.y);
+            ctx.shadowBlur = 0;
+        });
+    }
+
+    // ---------- Lógica ----------
+    function update(dt) {
+        state.bob += dt;
+        if (state.shake > 0) state.shake = Math.max(0, state.shake - dt * 2.5);
+        if (state.lastCollectedAlpha > 0) state.lastCollectedAlpha = Math.max(0, state.lastCollectedAlpha - dt * 2.2);
+        else state.lastCollected = null;
+
+        state.particles.forEach((pt) => {
+            pt.x += pt.vx;
+            pt.y += pt.vy;
+            pt.life -= dt * 1.8;
+        });
+        state.particles = state.particles.filter((pt) => pt.life > 0);
+
+        state.popups.forEach((pu) => { pu.y -= 30 * dt; pu.life -= dt; });
+        state.popups = state.popups.filter((pu) => pu.life > 0);
+
+        // gente en el parque
+        state.people.forEach((p) => {
+            p.walk += dt;
+            if (!p.arrived) {
+                const dx = p.tx - p.x;
+                const dy = p.ty - p.y;
+                const d = Math.hypot(dx, dy);
+                if (d > 4) {
+                    const sp = p.type === 'child' ? 55 : 40;
+                    p.x += (dx / d) * sp * dt;
+                    p.y += (dy / d) * sp * dt;
+                    p.moving = true;
+                } else {
+                    p.arrived = true;
+                    p.moving = false;
+                }
+                p.ox = p.x;
+                p.oy = p.y;
+            } else if (p.game) {
+                p.playPhase += dt;
+                if (p.game === 'swing') {
+                    p.ox = p.baseX + Math.sin(p.playPhase * 1.8) * 20;
+                    p.oy = p.baseY - Math.abs(Math.sin(p.playPhase * 2)) * 4;
+                } else if (p.game === 'seesaw') {
+                    const h = Math.sin(p.playPhase * 2) * 18 * p.side;
+                    p.ox = p.baseX;
+                    p.oy = p.baseY - h;
+                } else if (p.game === 'pool') {
+                    p.ox = p.baseX + Math.sin(p.playPhase * 0.7) * 22;
+                    p.oy = p.baseY - Math.abs(Math.sin(p.playPhase * 2.2)) * 7;
+                } else if (p.game === 'cars') {
+                    p.ox = p.baseX;
+                    p.oy = p.baseY - Math.abs(Math.sin(p.playPhase * 3.5 + p.seed)) * 7;
+                } else if (p.game === 'ball') {
+                    p.ox = p.baseX;
+                    p.oy = p.baseY - Math.abs(Math.sin(p.playPhase * 3)) * 4;
+                }
+            }
+        });
+
+        // pelota que juega el niño
+        if (state.playBall) {
+            state.playBall.t += dt * 0.55;
+            if (state.playBall.t > 1) state.playBall.t = 0;
+        }
+
+        if (!state.running && !state.placement) return;
+
+        // movimiento
+        let dx = 0, dy = 0;
+        if (state.keys.left) dx -= 1;
+        if (state.keys.right) dx += 1;
+        if (state.keys.up) dy -= 1;
+        if (state.keys.down) dy += 1;
+        if (dx !== 0 || dy !== 0) {
+            const len = Math.hypot(dx, dy);
+            dx /= len; dy /= len;
+            state.player.x += dx * SPEED * dt;
+            state.player.y += dy * SPEED * dt;
+            state.player.dir = { x: dx, y: dy };
+            state.player.bob += dt * 10;
+        }
+
+        // límites
+        state.player.x = Math.max(BOUNDS.x1, Math.min(BOUNDS.x2, state.player.x));
+        state.player.y = Math.max(BOUNDS.y1, Math.min(BOUNDS.y2, state.player.y));
+
+        if (!state.running) return;
+
+        // recoger residuo
+        tryPickup();
+
+        // temporizador
+        state.timer -= dt;
+        if (state.timer <= 0) {
+            state.timer = 0;
+            onTimeout();
+        }
+
+        updateHUD();
+    }
+
+    function render() {
+        ctx.save();
+        if (state.shake > 0) {
+            ctx.translate((Math.random() - 0.5) * 7 * state.shake, (Math.random() - 0.5) * 7 * state.shake);
+        }
+        drawBackground();
+        TREES.forEach(([x, y]) => drawTree(x, y));
+        drawItems();
+        drawPrizes();
+        drawPeople();
+        drawPlayBall();
+        drawCharacter();
+        drawParticles();
+        drawPopups();
+        ctx.restore();
+    }
+
+    function frame(ts) {
+        const dt = Math.min(0.05, (ts - (state.lastTime || ts)) / 1000);
+        state.lastTime = ts;
+        update(dt);
+        render();
+        requestAnimationFrame(frame);
+    }
+
+    // ---------- Input ----------
+    function bindEvents() {
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') state.keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') state.keys.right = true;
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') state.keys.up = true;
+            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') state.keys.down = true;
+            if (e.key === ' ' || e.key === 'Enter') {
+                if (state.placement) {
+                    if (state.selectedPrize) placePrizeAt(state.player.x, state.player.y);
+                }
+            }
+            e.preventDefault();
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') state.keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') state.keys.right = false;
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') state.keys.up = false;
+            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') state.keys.down = false;
+        });
+
+        // clic en el parque para colocar el premio seleccionado
+        canvas.addEventListener('click', (e) => {
+            if (!state.placement || !state.selectedPrize) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / (rect.width / W);
+            const y = (e.clientY - rect.top) / (rect.height / H);
+            placePrizeAt(x, y);
+        });
+
+        // clic en los casilleros del tablero
+        $('prizeSlots').addEventListener('click', (e) => {
+            const slot = e.target.closest('[data-type]');
+            if (slot) selectPrize(slot.dataset.type);
+        });
+
+        $('startBtn').addEventListener('click', () => { ensureAudio(); resetGame(); });
+        $('boyBtn').addEventListener('click', () => { state.gender = 'boy'; show('startScreen'); });
+        $('girlBtn').addEventListener('click', () => { state.gender = 'girl'; show('startScreen'); });
+        $('restartBtn').addEventListener('click', resetGame);
+        $('finishBtn').addEventListener('click', finishPlacement);
+        $('soccerBtn').addEventListener('click', () => chooseBallVariant('soccer'));
+        $('basketBtn').addEventListener('click', () => chooseBallVariant('basket'));
+        $('volleyBtn').addEventListener('click', () => chooseBallVariant('volley'));
+
+        // D-pad táctil
+        const press = (key) => { state.keys[key] = true; };
+        const release = (key) => { state.keys[key] = false; };
+        const bindBtn = (id, key) => {
+            const el = $(id);
+            const down = (e) => { e.preventDefault(); press(key); };
+            const up = (e) => { e.preventDefault(); release(key); };
+            el.addEventListener('mousedown', down);
+            el.addEventListener('mouseup', up);
+            el.addEventListener('mouseleave', () => release(key));
+            el.addEventListener('touchstart', down, { passive: false });
+            el.addEventListener('touchend', up, { passive: false });
+            el.addEventListener('touchcancel', () => release(key));
+        };
+        bindBtn('btnUp', 'up');
+        bindBtn('btnDown', 'down');
+        bindBtn('btnLeft', 'left');
+        bindBtn('btnRight', 'right');
+
+        if (!('ontouchstart' in window)) {
+            $('touchControls').classList.add('hidden');
+        }
+    }
+
+    function resize() {
+        const pad = 20;
+        const maxW = window.innerWidth - pad * 2;
+        const maxH = window.innerHeight - pad * 2;
+        const scale = Math.min(maxW / W, maxH / H, 1.35);
+        const c = $('gameContainer');
+        canvas.width = W;
+        canvas.height = H;
+        c.style.width = W * scale + 'px';
+        c.style.height = H * scale + 'px';
+        canvas.style.width = W * scale + 'px';
+        canvas.style.height = H * scale + 'px';
+    }
+
+    function init() {
+        resize();
+        window.addEventListener('resize', resize);
+        bindEvents();
+        updateBoard();
+        updateHUD();
+        requestAnimationFrame(frame);
+    }
+
+    window.ecologiaGame = { state, restart: resetGame };
+
+    document.addEventListener('DOMContentLoaded', init);
+})();
