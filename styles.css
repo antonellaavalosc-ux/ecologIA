@@ -114,8 +114,8 @@ canvas {
 
 #missionBanner {
     position: absolute;
-    top: 62px;
-    left: 50%;
+    bottom: 16px;
+    left: 25%;
     transform: translateX(-50%);
     background: #163527;
     border: 2px solid #a5d6a7;

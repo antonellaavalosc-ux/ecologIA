@@ -74,6 +74,8 @@
         keys: {},
         items: [],
         prizes: [],
+        kickBall: null,
+        holdingBall: false,
         people: [],
         playBall: null,
         roundFacts: [],
@@ -367,7 +369,7 @@
         state.level = index + 1;
         state.missionIndex = index;
         state.mission = { accepts: m.accepts, name: m.name, icon: m.icon, target: m.target, count: 0, prize: m.prize };
-        state.timeLimit = 20;
+        state.timeLimit = 30;
         state.timer = state.timeLimit;
         if (!keepPos) {
             state.player.x = 450;
@@ -389,6 +391,8 @@
         state.shake = 0;
         state.prizes = [];
         state.people = [];
+        state.kickBall = null;
+        state.holdingBall = false;
         state.playBall = null;
         state.placement = false;
         state.selectedPrize = null;
@@ -410,6 +414,85 @@
     }
 
     // ---------- Acciones ----------
+    function kickBall() {
+        if (state.holdingBall) return;
+        const pb = state.playBall;
+        if (!pb || !pb.kids || !pb.kids.every((k) => k.arrived)) return;
+        const pr = state.prizes.find((p) => p.type === 'ball');
+        if (!pr || pr.ballX == null || pr.ballY == null) return;
+        const bx = state.kickBall ? state.kickBall.x : pr.ballX;
+        const by = state.kickBall ? state.kickBall.y : pr.ballY;
+        if (dist(state.player.x, state.player.y, bx, by) > 55) return;
+        const dx = state.player.dir.x || (bx < state.player.x ? -1 : 1);
+        const dy = state.player.dir.y || 0;
+        const sp = Math.hypot(dx, dy) || 1;
+        state.kickBall = { x: bx, y: by, vx: (dx / sp) * 430, vy: (dy / sp) * 430 };
+        sfxPick();
+    }
+
+    function toggleHoldBall() {
+        if (state.holdingBall) {
+            // ya la tengo: la tiro por arriba
+            const k = state.kickBall || {};
+            const dx = state.player.dir.x || (k.vx || 0);
+            const dy = state.player.dir.y || (k.vy || 0);
+            const sp = Math.hypot(dx, dy) || 1;
+            state.kickBall = {
+                x: state.player.x, y: state.player.y,
+                vx: (dx / sp) * 260, vy: (dy / sp) * 260,
+                lob: true, h: 10, vh: -300,
+            };
+            state.holdingBall = false;
+            sfxPick();
+            return;
+        }
+        // tratar de agarrar la pelota
+        const pb = state.playBall;
+        if (!pb || !pb.kids || !pb.kids.every((k) => k.arrived)) return;
+        const pr = state.prizes.find((p) => p.type === 'ball');
+        if (!pr || pr.ballX == null || pr.ballY == null) return;
+        const bx = state.kickBall ? state.kickBall.x : pr.ballX;
+        const by = state.kickBall ? state.kickBall.y : pr.ballY;
+        if (dist(state.player.x, state.player.y, bx, by) > 55) return;
+        state.kickBall = null;
+        state.holdingBall = true;
+        sfxPick();
+    }
+
+    function updateKickBall(dt) {
+        if (state.holdingBall) return;
+        const pr = state.prizes.find((p) => p.type === 'ball');
+        if (!pr || pr.ballX == null || !state.kickBall) return;
+        const k = state.kickBall;
+        if (k.lob) {
+            // va por el aire: sube y baja por gravedad
+            k.h += k.vh * dt;
+            k.vh += 620 * dt;
+            k.x += k.vx * dt;
+            k.y += k.vy * dt;
+            if (k.h <= 0 && k.vh > 0) {
+                k.h = 0;
+                k.lob = false;
+                k.vh = 0;
+            }
+        } else {
+            k.x += k.vx * dt;
+            k.y += k.vy * dt;
+            const f = Math.max(0, 1 - 1.3 * dt);
+            k.vx *= f;
+            k.vy *= f;
+        }
+        if (k.x < BOUNDS.x1 + 12) { k.x = BOUNDS.x1 + 12; k.vx = Math.abs(k.vx) * 0.6; }
+        if (k.x > BOUNDS.x2 - 12) { k.x = BOUNDS.x2 - 12; k.vx = -Math.abs(k.vx) * 0.6; }
+        if (k.y < BOUNDS.y1 + 12) { k.y = BOUNDS.y1 + 12; k.vy = Math.abs(k.vy) * 0.6; }
+        if (k.y > BOUNDS.y2 - 12) { k.y = BOUNDS.y2 - 12; k.vy = -Math.abs(k.vy) * 0.6; }
+        if (!k.lob && k.vx * k.vx + k.vy * k.vy < 40) {
+            pr.ballX = k.x;
+            pr.ballY = k.y;
+            state.kickBall = null;
+        }
+    }
+
     function tryPickup() {
         for (let i = 0; i < state.items.length; i++) {
             const it = state.items[i];
@@ -626,7 +709,7 @@
         let c = 0;
         const next = () => colors[c++ % colors.length];
 
-        if (swingPr) {
+        if (swingPr && swingPr.placed) {
             // columpio: un niño se columpia (sincronizado con el asiento)
             const swingKid = addChild('swing', swingPr.x - 46 * S_SWING, swingPr.y - 10 * S_SWING, next());
             swingKid.swingPivotX = swingPr.x - 48 * S_SWING;
@@ -635,12 +718,12 @@
             addChild('seesaw', swingPr.x + 38 * S_SWING, swingPr.y - 10 * S_SWING, next(), 1);
             addChild('seesaw', swingPr.x + 106 * S_SWING, swingPr.y - 10 * S_SWING, next(), -1);
         }
-        if (poolPr) {
+        if (poolPr && poolPr.placed) {
             // pileta: nadan y chapotean
             addChild('pool', poolPr.x - 10, poolPr.y, next());
             addChild('pool', poolPr.x - 30, poolPr.y, next());
         }
-        if (carPr) {
+        if (carPr && carPr.placed) {
             // carritos: un niño por carro, se sube adentro y lo maneja
             const carSeats = [
                 { x: carPr.x - 110.16, y: carPr.y - 12.24, ph: 0 },
@@ -681,8 +764,8 @@
         const x = p.ox;
         const y = p.oy;
         const step = p.moving ? Math.sin(p.walk * 8) : 0;
-        if (p.driving) {
-            // niñito adentro del carrito: cabeza y hombros asoman
+        if (p.driving && p.arrived) {
+            // niñito adentro del carrito: cabeza y hombros asoman (solo cuando está adentro)
             ctx.fillStyle = '#4e944e';
             ctx.beginPath();
             ctx.ellipse(x, y + 10, 9, 4, 0, 0, Math.PI * 2);
@@ -829,9 +912,12 @@
             } else if (state.missionIndex >= MAX_LEVEL - 1) {
                 win();
             } else {
-                hideSpeech();
-                startMission(state.missionIndex + 1, true);
-                state.running = true;
+                showSpeech('¡Misión completada! 🎉');
+                setTimeout(() => {
+                    hideSpeech();
+                    startMission(state.missionIndex + 1, true);
+                    state.running = true;
+                }, 2200);
             }
         };
         next();
@@ -1710,12 +1796,21 @@
                     drawPrizeGraphic('ball_arch', pr.archX, pr.archY, 0, pr.variant);
                 }
                 if (pr.ballX != null && pr.ballY != null) {
-                    const bob = Math.sin(state.bob * 2 + pr.ballX) * 2;
+                    let bx = state.kickBall ? state.kickBall.x : pr.ballX;
+                    let by = state.kickBall ? state.kickBall.y : pr.ballY;
+                    let bob = Math.sin(state.bob * 2 + bx) * 2;
+                    if (state.holdingBall) {
+                        bx = state.player.x + state.player.dir.x * 22;
+                        by = state.player.y + state.player.dir.y * 22 - 8;
+                        bob = Math.sin(state.bob * 10) * 3;
+                    } else if (state.kickBall && state.kickBall.lob) {
+                        bob = state.kickBall.h;
+                    }
                     ctx.fillStyle = '#549853';
                     ctx.beginPath();
-                    ctx.ellipse(pr.ballX, pr.ballY + 6, 16, 6, 0, 0, Math.PI * 2);
+                    ctx.ellipse(bx, by + 6, 16, 6, 0, 0, Math.PI * 2);
                     ctx.fill();
-                    drawPrizeGraphic('ball', pr.ballX, pr.ballY, bob, null);
+                    drawPrizeGraphic('ball', bx, by, bob, null);
                 }
                 return;
             }
@@ -2052,6 +2147,8 @@
         state.player.x = Math.max(BOUNDS.x1, Math.min(BOUNDS.x2, state.player.x));
         state.player.y = Math.max(BOUNDS.y1, Math.min(BOUNDS.y2, state.player.y));
 
+        updateKickBall(dt);
+
         if (!state.running) return;
 
         // recoger residuo
@@ -2102,7 +2199,12 @@
             if (e.key === ' ' || e.key === 'Enter') {
                 if (state.placement) {
                     if (state.selectedPrize) placePrizeAt(state.player.x, state.player.y);
+                } else {
+                    kickBall();
                 }
+            }
+            if (e.key === 'r' || e.key === 'R') {
+                if (!state.placement) toggleHoldBall();
             }
             e.preventDefault();
         });
