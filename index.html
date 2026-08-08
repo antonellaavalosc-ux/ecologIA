@@ -8,8 +8,12 @@
 </head>
 <body>
 
-<div id="gameContainer">
+    <div id="gameContainer">
     <canvas id="gameCanvas"></canvas>
+
+    <button id="musicBtn" title="Música de fondo">🔊</button>
+
+    <button id="replayBtn" class="hidden">🔄 Volver a jugar</button>
 
     <div id="ui">
         <div class="left">
@@ -41,7 +45,7 @@
     <div id="factBubble" class="fact-bubble hidden"></div>
 
     <div id="speechBubble" class="speech-bubble hidden">
-        <span id="speechFace">👦</span>
+        <canvas id="speechFace" width="80" height="80"></canvas>
         <span id="speechText"></span>
     </div>
 

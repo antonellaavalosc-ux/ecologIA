@@ -76,6 +76,7 @@
         prizes: [],
         people: [],
         playBall: null,
+        roundFacts: [],
         placement: false,
         selectedPrize: null,
         selectedVariant: null,
@@ -166,6 +167,174 @@
     function sfxWin() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.2, 'triangle', 0.2, i * 0.12)); }
     function sfxGameOver() { [400, 300, 200, 100].forEach((f, i) => tone(f, 0.2, 'sawtooth', 0.18, i * 0.15)); }
 
+    // ---------- Música de fondo (naturaleza) ----------
+    const natureMusic = {
+        started: false,
+        muted: false,
+        birdTimer: 3,
+        musicStarted: false,
+        nextBar: 0,
+        bpm: 105,
+        melody: [
+            [0, 523.25], [2, 659.25], [4, 783.99], [6, 659.25],
+            [8, 880], [10, 783.99], [12, 659.25], [14, 523.25],
+            [16, 587.33], [18, 698.46], [20, 880], [22, 698.46],
+            [24, 783.99], [26, 698.46], [28, 587.33], [30, 493.88],
+            [32, 523.25], [34, 659.25], [36, 783.99], [38, 659.25],
+            [40, 880], [42, 783.99], [44, 659.25], [46, 783.99],
+            [48, 698.46], [50, 587.33], [52, 493.88], [54, 587.33],
+            [56, 523.25], [62, 1046.5],
+        ],
+        bass: [
+            [0, 130.81], [4, 130.81], [8, 196], [12, 196],
+            [16, 220], [20, 220], [24, 174.61], [28, 174.61],
+            [32, 130.81], [36, 130.81], [40, 196], [44, 196],
+            [48, 174.61], [52, 174.61], [56, 130.81], [60, 130.81],
+        ],
+        playNote(freq, t, dur, type, vol) {
+            const c = ensureAudio();
+            const o = c.createOscillator();
+            const g = c.createGain();
+            o.type = type;
+            o.frequency.value = freq;
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            o.connect(g);
+            g.connect(c.destination);
+            o.start(t);
+            o.stop(t + dur + 0.05);
+        },
+        scheduleBar() {
+            const c = ensureAudio();
+            if (!c) return;
+            const stepDur = 60 / this.bpm / 2;
+            this.melody.forEach(([st, f]) => {
+                this.playNote(f, this.nextBar + st * stepDur, stepDur * 0.85, 'triangle', 0.07);
+            });
+            this.bass.forEach(([st, f]) => {
+                this.playNote(f, this.nextBar + st * stepDur, stepDur * 4, 'sine', 0.1);
+            });
+            this.nextBar += 32 * stepDur;
+        },
+        startMusic() {
+            const c = ensureAudio();
+            if (!c || this.musicStarted) return;
+            this.musicStarted = true;
+            this.nextBar = c.currentTime + 0.1;
+        },
+        start() {
+            const c = ensureAudio();
+            if (!c || this.started) return;
+            this.started = true;
+            try { if (c.resume) c.resume(); } catch (e) {}
+            // buffer de ruido (viento)
+            const len = c.sampleRate * 2;
+            const buf = c.createBuffer(1, len, c.sampleRate);
+            const d = buf.getChannelData(0);
+            let last = 0;
+            for (let i = 0; i < len; i++) {
+                const w = Math.random() * 2 - 1;
+                last = (last + 0.02 * w) / 1.02;
+                d[i] = last * 4;
+            }
+            // viento suave
+            const src = c.createBufferSource();
+            src.buffer = buf;
+            src.loop = true;
+            const lp = c.createBiquadFilter();
+            lp.type = 'lowpass';
+            lp.frequency.value = 480;
+            this.wind = c.createGain();
+            this.wind.gain.value = 0.06;
+            src.connect(lp);
+            lp.connect(this.wind);
+            this.wind.connect(c.destination);
+            src.start();
+            const lfo = c.createOscillator();
+            lfo.frequency.value = 0.08;
+            const lfoG = c.createGain();
+            lfoG.gain.value = 0.03;
+            lfo.connect(lfoG);
+            lfoG.connect(this.wind.gain);
+            lfo.start();
+            const flfo = c.createOscillator();
+            flfo.frequency.value = 0.05;
+            const flfoG = c.createGain();
+            flfoG.gain.value = 150;
+            flfo.connect(flfoG);
+            flfoG.connect(lp.frequency);
+            flfo.start();
+            // arroyo (ruido en banda media, muy suave)
+            const src2 = c.createBufferSource();
+            src2.buffer = buf;
+            src2.loop = true;
+            src2.playbackRate.value = 0.7;
+            const bp = c.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.frequency.value = 2200;
+            bp.Q.value = 0.6;
+            this.stream = c.createGain();
+            this.stream.gain.value = 0.015;
+            src2.connect(bp);
+            bp.connect(this.stream);
+            this.stream.connect(c.destination);
+            src2.start();
+            this.startMusic();
+        },
+        setMuted(m) {
+            this.muted = m;
+            if (this.wind) this.wind.gain.value = m ? 0 : 0.06;
+            if (this.stream) this.stream.gain.value = m ? 0 : 0.015;
+            if (!m && this.musicStarted) {
+                const c = ensureAudio();
+                if (c) this.nextBar = c.currentTime + 0.1;
+            }
+        },
+        tick(dt) {
+            if (!this.started || this.muted) return;
+            this.birdTimer -= dt;
+            if (this.birdTimer <= 0) {
+                // varios pájaros cantando a la vez
+                this.chirp();
+                if (Math.random() < 0.7) this.chirp();
+                if (Math.random() < 0.4) this.chirp();
+                if (Math.random() < 0.2) this.chirp();
+                this.birdTimer = 0.5 + Math.random() * 1.5;
+            }
+            // melodía del parque
+            if (this.musicStarted) {
+                const c = ensureAudio();
+                if (!c) return;
+                while (c.currentTime > this.nextBar - 0.15) {
+                    if (this.muted) this.nextBar += 32 * (60 / this.bpm / 2);
+                    else this.scheduleBar();
+                }
+            }
+        },
+        chirp() {
+            const c = ensureAudio();
+            if (!c) return;
+            const t = c.currentTime;
+            const osc = c.createOscillator();
+            const g = c.createGain();
+            const f0 = 2100 + Math.random() * 1400;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f0, t);
+            const notes = 3 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < notes; i++) {
+                osc.frequency.exponentialRampToValueAtTime(f0 * (0.7 + Math.random() * 0.9), t + (i + 1) * 0.09);
+            }
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(0.05, t + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+            osc.connect(g);
+            g.connect(c.destination);
+            osc.start(t);
+            osc.stop(t + 0.8);
+        },
+    };
+
     // ---------- Misiones ----------
     function spawnMissionItems(targetRemaining) {
         // re-disemina solo los residuos de la misión actual que faltan (deja los de las demás)
@@ -198,7 +367,7 @@
         state.level = index + 1;
         state.missionIndex = index;
         state.mission = { accepts: m.accepts, name: m.name, icon: m.icon, target: m.target, count: 0, prize: m.prize };
-        state.timeLimit = 15 + m.target * 6;
+        state.timeLimit = 20;
         state.timer = state.timeLimit;
         if (!keepPos) {
             state.player.x = 450;
@@ -206,6 +375,7 @@
             state.player.dir = { x: 0, y: -1 };
         }
         if (!keepPos) spawnAllItems();
+        state.roundFacts = [];
         updateHUD();
     }
 
@@ -225,11 +395,13 @@
         state.selectedVariant = null;
         state.ballStage = null;
         state.cleanCount = 0;
+        state.roundFacts = [];
         state.running = true;
         hideSpeech();
         $('missionBanner').classList.remove('hidden');
         $('progressBar').classList.remove('hidden');
         $('placementBanner').classList.add('hidden');
+        $('replayBtn').classList.add('hidden');
         $('prizeSlots').dataset.built = '';
         updateBoard();
         startMission(0);
@@ -251,7 +423,7 @@
                 state.lastCollectedAlpha = 1;
                 spawnParticles(it.x, it.y, '#ffd54f');
                 popup(it.x, it.y - 20, `+${pts}`, '#fff176');
-                showFact(it.fact);
+                if (!state.roundFacts.includes(it.fact)) state.roundFacts.push(it.fact);
                 sfxPick();
 
                 state.mission.count++;
@@ -418,6 +590,7 @@
     }
 
     function startParkOpening() {
+        $('replayBtn').classList.remove('hidden');
         const swingPr = state.prizes.find((p) => p.type === 'swing');
         const poolPr = state.prizes.find((p) => p.type === 'pool');
         const carPr = state.prizes.find((p) => p.type === 'stroller');
@@ -435,7 +608,7 @@
                 x: a.from[0], y: a.from[1], tx: a.to[0], ty: a.to[1],
                 ox: a.from[0], oy: a.from[1],
                 shirt: a.shirt, hair: a.hair, type: 'adult', game: null,
-                arrived: false, moving: true, playPhase: i * 0.4, seed: i,
+                arrived: false, moving: true, wander: true, idle: 0, playPhase: i * 0.4, seed: i,
             });
         });
 
@@ -454,8 +627,10 @@
         const next = () => colors[c++ % colors.length];
 
         if (swingPr) {
-            // columpio: un niño se columpia
-            addChild('swing', swingPr.x - 46 * S_SWING, swingPr.y - 10 * S_SWING, next());
+            // columpio: un niño se columpia (sincronizado con el asiento)
+            const swingKid = addChild('swing', swingPr.x - 46 * S_SWING, swingPr.y - 10 * S_SWING, next());
+            swingKid.swingPivotX = swingPr.x - 48 * S_SWING;
+            swingKid.swingPivotY = swingPr.y - 44 * S_SWING;
             // sube y baja: un niño de cada lado
             addChild('seesaw', swingPr.x + 38 * S_SWING, swingPr.y - 10 * S_SWING, next(), 1);
             addChild('seesaw', swingPr.x + 106 * S_SWING, swingPr.y - 10 * S_SWING, next(), -1);
@@ -466,17 +641,39 @@
             addChild('pool', poolPr.x - 30, poolPr.y, next());
         }
         if (carPr) {
-            // carritos: un niño por carro
-            addChild('cars', carPr.x - 110 + 16, carPr.y + 6, next());
-            addChild('cars', carPr.x + 110 - 16, carPr.y + 6, next());
-            addChild('cars', carPr.x + 18, carPr.y - 69, next());
+            // carritos: un niño por carro, se sube adentro y lo maneja
+            const carSeats = [
+                { x: carPr.x - 110.16, y: carPr.y - 12.24, ph: 0 },
+                { x: carPr.x + 110.16, y: carPr.y - 12.24, ph: 2 },
+                { x: carPr.x, y: carPr.y - 89.76, ph: 4 },
+            ];
+            carSeats.forEach((s) => {
+                const kid = addChild('cars', s.x, s.y, next());
+                kid.carPhase = s.ph;
+                kid.carBaseX = s.x;
+                kid.carBaseY = s.y;
+                kid.driving = true;
+            });
         }
         if (ballPr && ballPr.ballX != null) {
             // pelota según el arco elegido
-            const kid = addChild('ball', ballPr.ballX - 50, ballPr.ballY, next());
+            const kid1 = addChild('ball', ballPr.ballX - 50, ballPr.ballY, next());
+            const kid2 = addChild('ball', ballPr.ballX + 45, ballPr.ballY, next());
             const arc = ballPr.variant === 'basket' ? 40 : ballPr.variant === 'volley' ? 24 : 5;
             const ay = ballPr.variant === 'basket' ? ballPr.archY - 46 : ballPr.variant === 'volley' ? ballPr.archY - 55 : ballPr.archY - 4;
-            state.playBall = { t: 0, arc, ax: ballPr.archX, ay, child: kid };
+            state.playBall = { t: 0, arc, ax: ballPr.archX, ay, kids: [kid1, kid2], current: 0, shoot: true };
+        }
+
+        // niños que corren por todo el parque (sin juego asignado)
+        for (let i = 0; i < 3; i++) {
+            const col = next();
+            state.people.push({
+                x: -20 - i * 30, y: 200 + i * 40,
+                tx: 60 + Math.random() * (W - 140), ty: 120 + Math.random() * (H - 180),
+                ox: -20 - i * 30, oy: 200 + i * 40,
+                shirt: col.shirt, hair: col.hair, type: 'child', game: null,
+                arrived: false, moving: true, wander: true, idle: 0, playPhase: i * 0.5, seed: i,
+            });
         }
     }
 
@@ -484,6 +681,44 @@
         const x = p.ox;
         const y = p.oy;
         const step = p.moving ? Math.sin(p.walk * 8) : 0;
+        if (p.driving) {
+            // niñito adentro del carrito: cabeza y hombros asoman
+            ctx.fillStyle = '#4e944e';
+            ctx.beginPath();
+            ctx.ellipse(x, y + 10, 9, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // hombros
+            ctx.fillStyle = p.shirt;
+            ctx.beginPath();
+            ctx.ellipse(x, y, 9, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // brazos al volante
+            ctx.strokeStyle = p.shirt;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x - 9, y - 1); ctx.lineTo(x - 4, y + 2);
+            ctx.moveTo(x + 9, y - 1); ctx.lineTo(x + 4, y + 2);
+            ctx.stroke();
+            // cabeza
+            ctx.fillStyle = '#ffcc80';
+            ctx.beginPath();
+            ctx.arc(x, y - 12, 11, 0, Math.PI * 2);
+            ctx.fill();
+            // pelo
+            ctx.fillStyle = p.hair;
+            ctx.beginPath();
+            ctx.arc(x, y - 15, 11, Math.PI, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(x - 11, y - 15, 22, 3);
+            // ojos
+            ctx.fillStyle = '#3e2723';
+            ctx.beginPath();
+            ctx.arc(x - 4, y - 12, 1.8, 0, Math.PI * 2);
+            ctx.arc(x + 4, y - 12, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+            return;
+        }
         // sombra
         ctx.fillStyle = '#4e944e';
         ctx.beginPath();
@@ -534,12 +769,25 @@
 
     function drawPlayBall() {
         const pb = state.playBall;
-        if (!pb || !pb.child) return;
+        if (!pb || !pb.kids) return;
         const s = pb.t;
-        const cx = pb.child.ox;
-        const cy = pb.child.oy - 22;
-        const x = cx + (pb.ax - cx) * s;
-        const y = cy + (pb.ay - cy) * s - pb.arc * Math.sin(Math.PI * s);
+        const k0 = pb.kids[pb.current];
+        const cx = k0.ox;
+        const cy = k0.oy - 22;
+        let tx, ty, arc;
+        if (pb.shoot) {
+            tx = pb.ax;
+            ty = pb.ay;
+            arc = pb.arc;
+        } else {
+            // se la pasan al otro niño
+            const k1 = pb.kids[1 - pb.current];
+            tx = k1.ox;
+            ty = k1.oy - 22;
+            arc = 7;
+        }
+        const x = cx + (tx - cx) * s;
+        const y = cy + (ty - cy) * s - arc * Math.sin(Math.PI * s);
         // sombra
         ctx.fillStyle = '#4e944e';
         ctx.beginPath();
@@ -568,13 +816,25 @@
         // el parque se ve más limpio
         state.cleanCount = Math.min(MAX_LEVEL, state.cleanCount + 1);
 
-        if (state.missionIndex >= MAX_LEVEL - 1) {
-            popup(450, 260, '¡Ganaste! Completaste todas las misiones 💚', '#c8e6c9');
-            win();
-        } else {
-            popup(450, 260, '¡Misión completada!', '#a5d6a7');
-            setTimeout(() => { startMission(state.missionIndex + 1, true); }, 1200);
-        }
+        // pausa para leer los datos curiosos de la ronda
+        state.running = false;
+        const facts = state.roundFacts.slice();
+        state.roundFacts = [];
+        let i = 0;
+        const next = () => {
+            if (i < facts.length) {
+                showSpeech(`💡 ${facts[i]}`);
+                i++;
+                setTimeout(next, 4200);
+            } else if (state.missionIndex >= MAX_LEVEL - 1) {
+                win();
+            } else {
+                hideSpeech();
+                startMission(state.missionIndex + 1, true);
+                state.running = true;
+            }
+        };
+        next();
     }
 
     function loseLife() {
@@ -611,6 +871,7 @@
         $('missionBanner').classList.add('hidden');
         $('progressBar').classList.add('hidden');
         sfxWin();
+        popup(450, 260, '¡Ganaste! Completaste todas las misiones 💚', '#c8e6c9');
         showSpeech('¡Excelente! Terminamos de limpiar, ahora vamos a poner algunos juegos');
         setTimeout(() => {
             hideSpeech();
@@ -619,8 +880,77 @@
     }
 
     // ---------- Diálogo del personaje ----------
+    function drawSpeechFace() {
+        const c = $('speechFace');
+        const cx = c.width / 2;
+        const cy = c.height / 2;
+        const g = c.getContext('2d');
+        g.clearRect(0, 0, c.width, c.height);
+        if (state.gender === 'girl') {
+            // pelo largo por detrás
+            g.fillStyle = '#4e342e';
+            g.beginPath();
+            g.ellipse(cx, cy + 4, 30, 32, 0, 0, Math.PI * 2);
+            g.fill();
+        }
+        // hombros/remera
+        g.fillStyle = '#81c784';
+        g.beginPath();
+        g.ellipse(cx, cy + 34, 26, 12, 0, 0, Math.PI * 2);
+        g.fill();
+        // cabeza
+        g.fillStyle = '#ffcc80';
+        g.beginPath();
+        g.arc(cx, cy + 8, 24, 0, Math.PI * 2);
+        g.fill();
+        if (state.gender === 'girl') {
+            // cara y flequillo
+            g.fillStyle = '#ffcc80';
+            g.beginPath();
+            g.ellipse(cx, cy + 9, 19, 18, 0, 0, Math.PI * 2);
+            g.fill();
+            g.fillStyle = '#4e342e';
+            g.beginPath();
+            g.arc(cx, cy + 2, 19, Math.PI, Math.PI * 2);
+            g.fill();
+            g.fillRect(cx - 19, cy + 2, 38, 5);
+            // moños
+            g.fillStyle = '#e91e63';
+            g.beginPath();
+            g.moveTo(cx - 9, cy - 3);
+            g.lineTo(cx - 21, cy - 10);
+            g.lineTo(cx - 21, cy + 4);
+            g.closePath();
+            g.moveTo(cx + 9, cy - 3);
+            g.lineTo(cx + 21, cy - 10);
+            g.lineTo(cx + 21, cy + 4);
+            g.closePath();
+            g.fill();
+        } else {
+            // pelo corto
+            g.fillStyle = '#4e342e';
+            g.beginPath();
+            g.arc(cx, cy + 3, 24, Math.PI, Math.PI * 2);
+            g.fill();
+            g.fillRect(cx - 24, cy + 3, 48, 5);
+        }
+        // ojos
+        g.fillStyle = '#3e2723';
+        g.beginPath();
+        g.arc(cx - 8, cy + 9, 3, 0, Math.PI * 2);
+        g.arc(cx + 8, cy + 9, 3, 0, Math.PI * 2);
+        g.fill();
+        // sonrisa
+        g.strokeStyle = '#3e2723';
+        g.lineWidth = 2.5;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.arc(cx, cy + 16, 8, 0.2, Math.PI - 0.2);
+        g.stroke();
+    }
+
     function showSpeech(text) {
-        $('speechFace').textContent = state.gender === 'girl' ? '👧' : '👦';
+        drawSpeechFace();
         $('speechText').textContent = text;
         $('speechBubble').classList.remove('hidden');
     }
@@ -1212,7 +1542,7 @@
                 ctx.moveTo(-48, -44); ctx.lineTo(-38, -44);
                 ctx.stroke();
                 // asiento que se columpia cuando hay un niño
-                const swingAngle = kidsAt('swing') ? Math.sin(state.bob * 2.5) * 0.42 : 0;
+                const swingAngle = kidsAt('swing') ? Math.sin(state.bob * 1.8) * 0.42 : 0;
                 ctx.save();
                 ctx.translate(-48, -44);
                 ctx.rotate(swingAngle);
@@ -1237,7 +1567,7 @@
                 ctx.closePath();
                 ctx.fill();
                 // tabla que sube y baja cuando hay niños
-                const seesawAngle = kidsAt('seesaw') ? Math.sin(state.bob * 2.5) * 0.32 : 0.14;
+                const seesawAngle = kidsAt('seesaw') ? Math.sin(state.bob * 2) * 0.32 : 0.14;
                 ctx.save();
                 ctx.translate(72, -10);
                 ctx.rotate(seesawAngle);
@@ -1258,9 +1588,13 @@
                     { dx: 0, dy: -34, ph: 4 },
                 ];
                 cars.forEach((c) => {
-                    const ox = carsMove ? Math.sin(state.bob * 3 + c.ph) * 3 : 0;
+                    // dan vueltas en círculo alrededor de su lugar
+                    const orbit = carsMove ? 10 : 0;
+                    const a = state.bob * 1.6 + c.ph;
+                    const ox = Math.cos(a) * orbit;
+                    const oy = Math.sin(a) * orbit;
                     ctx.save();
-                    ctx.translate(c.dx + ox, c.dy);
+                    ctx.translate(c.dx + ox, c.dy + oy);
                     // ruedas
                     ctx.fillStyle = '#263238';
                     ctx.beginPath();
@@ -1607,6 +1941,7 @@
     // ---------- Lógica ----------
     function update(dt) {
         state.bob += dt;
+        natureMusic.tick(dt);
         if (state.shake > 0) state.shake = Math.max(0, state.shake - dt * 2.5);
         if (state.lastCollectedAlpha > 0) state.lastCollectedAlpha = Math.max(0, state.lastCollectedAlpha - dt * 2.2);
         else state.lastCollected = null;
@@ -1624,47 +1959,76 @@
         // gente en el parque
         state.people.forEach((p) => {
             p.walk += dt;
+            // los que no tienen juego corren por todo el parque
+            if (p.wander && p.arrived) {
+                p.idle -= dt;
+                if (p.idle <= 0) {
+                    p.tx = 50 + Math.random() * (W - 100);
+                    p.ty = 100 + Math.random() * (H - 140);
+                    p.arrived = false;
+                    p.moving = true;
+                }
+            }
             if (!p.arrived) {
                 const dx = p.tx - p.x;
                 const dy = p.ty - p.y;
                 const d = Math.hypot(dx, dy);
                 if (d > 4) {
-                    const sp = p.type === 'child' ? 55 : 40;
+                    const sp = p.wander ? (p.type === 'child' ? 95 : 50) : (p.type === 'child' ? 55 : 40);
                     p.x += (dx / d) * sp * dt;
                     p.y += (dy / d) * sp * dt;
                     p.moving = true;
                 } else {
                     p.arrived = true;
                     p.moving = false;
+                    p.idle = 0.3 + Math.random() * 1.2;
                 }
                 p.ox = p.x;
                 p.oy = p.y;
             } else if (p.game) {
                 p.playPhase += dt;
                 if (p.game === 'swing') {
-                    p.ox = p.baseX + Math.sin(p.playPhase * 1.8) * 20;
-                    p.oy = p.baseY - Math.abs(Math.sin(p.playPhase * 2)) * 4;
+                    // el niño va exactamente sobre el asiento, sincronizado con el columpio
+                    const a = Math.sin(state.bob * 1.8) * 0.42;
+                    p.ox = p.swingPivotX + (2 * Math.cos(a) - 34 * Math.sin(a)) * S_SWING;
+                    p.oy = p.swingPivotY + (2 * Math.sin(a) + 34 * Math.cos(a)) * S_SWING;
                 } else if (p.game === 'seesaw') {
-                    const h = Math.sin(p.playPhase * 2) * 18 * p.side;
+                    // sincronizado con la tabla del sube y baja
+                    const h = Math.sin(state.bob * 2) * 18 * p.side;
                     p.ox = p.baseX;
                     p.oy = p.baseY - h;
                 } else if (p.game === 'pool') {
                     p.ox = p.baseX + Math.sin(p.playPhase * 0.7) * 22;
                     p.oy = p.baseY - Math.abs(Math.sin(p.playPhase * 2.2)) * 7;
                 } else if (p.game === 'cars') {
-                    p.ox = p.baseX;
-                    p.oy = p.baseY - Math.abs(Math.sin(p.playPhase * 3.5 + p.seed)) * 7;
+                    // el niño va adentro del carrito mientras este da vueltas
+                    const a = state.bob * 1.6 + p.carPhase;
+                    p.ox = p.carBaseX + Math.cos(a) * 20.4;
+                    p.oy = p.carBaseY + Math.sin(a) * 20.4;
                 } else if (p.game === 'ball') {
                     p.ox = p.baseX;
                     p.oy = p.baseY - Math.abs(Math.sin(p.playPhase * 3)) * 4;
                 }
+            } else {
+                p.ox = p.x;
+                p.oy = p.y;
             }
         });
 
-        // pelota que juega el niño
-        if (state.playBall) {
-            state.playBall.t += dt * 0.55;
-            if (state.playBall.t > 1) state.playBall.t = 0;
+        // pelota que juegan los niños
+        const pb = state.playBall;
+        if (pb) {
+            pb.t += dt * 0.5;
+            if (pb.t > 1) {
+                pb.t = 0;
+                // a veces la tiran al arco, otras se la pasan entre los dos
+                if (Math.random() < 0.4) {
+                    pb.shoot = true;
+                } else {
+                    pb.shoot = false;
+                    pb.current = 1 - pb.current;
+                }
+            }
         }
 
         if (!state.running && !state.placement) return;
@@ -1765,7 +2129,7 @@
             if (slot) selectPrize(slot.dataset.type);
         });
 
-        $('startBtn').addEventListener('click', () => { ensureAudio(); resetGame(); });
+        $('startBtn').addEventListener('click', () => { ensureAudio(); natureMusic.start(); resetGame(); });
         $('boyBtn').addEventListener('click', () => { state.gender = 'boy'; show('startScreen'); });
         $('girlBtn').addEventListener('click', () => { state.gender = 'girl'; show('startScreen'); });
         $('restartBtn').addEventListener('click', resetGame);
@@ -1773,6 +2137,15 @@
         $('soccerBtn').addEventListener('click', () => chooseBallVariant('soccer'));
         $('basketBtn').addEventListener('click', () => chooseBallVariant('basket'));
         $('volleyBtn').addEventListener('click', () => chooseBallVariant('volley'));
+
+        $('musicBtn').addEventListener('click', () => {
+            if (!natureMusic.started) { ensureAudio(); natureMusic.start(); }
+            const m = !natureMusic.muted;
+            natureMusic.setMuted(m);
+            $('musicBtn').textContent = m ? '🔇' : '🔊';
+        });
+
+        $('replayBtn').addEventListener('click', resetGame);
 
         // D-pad táctil
         const press = (key) => { state.keys[key] = true; };
