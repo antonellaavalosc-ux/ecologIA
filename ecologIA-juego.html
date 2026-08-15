@@ -536,28 +536,6 @@
             border-bottom-width: 2px;
         }
 
-        #rotateHint {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(15, 43, 29, 0.96);
-            color: #fff;
-            font-size: 22px;
-            font-weight: bold;
-            text-align: center;
-            line-height: 1.6;
-            padding: 30px;
-        }
-
-        @media (pointer: coarse) and (orientation: portrait) and (max-width: 768px) {
-            #rotateHint {
-                display: flex;
-            }
-        }
-
         @media (pointer: coarse) {
             #touchControls {
                 display: flex;
@@ -681,8 +659,6 @@
             </div>
         </div>
 
-        <div id="rotateHint" class="hidden">🔄 Gira tu dispositivo<br>para jugar en horizontal</div>
-
         <div id="selectScreen" class="screen">
             <div class="card">
                 <div class="logo">🌳</div>
@@ -716,7 +692,6 @@
                     <div><span class="key">Espacio</span> Patear la pelota · <span class="key">R</span> Agarrar / tirar
                     </div>
                     <div><span class="key">Clic</span> Colocar premios al final</div>
-                    <div>📱 En celular: usá los botones en pantalla</div>
                 </div>
                 <button id="startBtn">Comenzar</button>
             </div>
@@ -3019,7 +2994,7 @@
                 const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
                 const maxW = vw - pad * 2;
                 const maxH = vh - pad * 2;
-                const scale = Math.min(maxW / W, maxH / H, 1.35);
+                const scale = Math.min(maxW / W, maxH / H, 1.5);
                 const c = $('gameContainer');
                 canvas.width = W;
                 canvas.height = H;
