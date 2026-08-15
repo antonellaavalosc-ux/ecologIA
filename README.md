@@ -13,7 +13,7 @@ Cada misión pide recoger **solo** un residuo concreto. La misión activa se mue
 | 1 | 🧴 Botellas de plástico | ⚽ Pelota con arco |
 | 2 | 📰 Diarios, 📦 cajas y 📄 papeles | Columpio y sube y baja |
 | 3 | 🍌 Cáscaras de plátano, 🍉 de sandía y 🍎 manzanas mordidas | 3 carritos para pasear niños |
-| 4 | 💩 Residuos peligrosos | Pileta con tobogán |
+| 4 | 💩 Residuos sanitarios | Pileta con tobogán |
 
 **Puntos:** cada residuo correcto suma **15 puntos** y avanza la barra de la misión. El contador de puntos y el progreso se muestran en el HUD.
 
@@ -81,6 +81,8 @@ Al final aparece el botón **"🔄 Volver a jugar"** para reiniciar la partida c
 - **CSS3:** interfaz, pantallas de inicio/derrota, transparencias y diseño responsivo.
 - **JavaScript (Vanilla):** bucle de juego, colisiones, física de la pelota, sonido procedural (naturaleza + melodía), animaciones y estado del juego.
 
+> 📄 Todo el juego está empaquetado en un **único archivo**: `ecologIA-juego.html` (HTML + CSS + JS).
+
 ## 🚀 Instalación y Uso
 
 No requiere instalación ni librerías externas.
@@ -89,7 +91,7 @@ No requiere instalación ni librerías externas.
    ```
    git clone https://github.com/antonellaavalosc-ux/ecologIA.git
    ```
-2. Abrí `index.html` en cualquier navegador moderno (Chrome, Firefox, Edge, Safari).
+2. Abrí `ecologIA-juego.html` en cualquier navegador moderno (Chrome, Firefox, Edge, Safari).
 3. Si no ves los últimos cambios, forzá la recarga con **Ctrl+F5**.
 
 ## 🏆 Objetivo
