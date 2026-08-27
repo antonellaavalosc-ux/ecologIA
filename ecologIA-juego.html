@@ -634,10 +634,6 @@
                         <span class="char-face">⚽</span>
                         <span class="char-name">Fútbol</span>
                     </button>
-                    <button id="basketBtn" class="char-option">
-                        <span class="char-face">🏀</span>
-                        <span class="char-name">Básquet</span>
-                    </button>
                     <button id="volleyBtn" class="char-option">
                         <span class="char-face">🏐</span>
                         <span class="char-name">Vóley</span>
@@ -736,34 +732,57 @@
                 { emoji: '🫙', cat: 'vidrio', fact: 'El vidrio tarda 4.000 años en descomponerse en la naturaleza.' },
                 { emoji: '🥃', cat: 'vidrio', fact: 'Reciclar una botella de vidrio ahorra energía para encender una ampolleta 4 horas.' },
                 { emoji: '💩', cat: 'peligroso', fact: '¡El popó de perro es un residuo sanitario! Hay que recogerlo con cuidado porque contamina.' },
+                { emoji: '🪣', cat: 'bolsa', fact: 'Las bolsas plásticas tardan hasta 20 años en descomponerse.' },
+                { emoji: '🥤', cat: 'sorbete', fact: 'Los sorbetes de plástico contaminan los océanos y matan a los animales marinos.' },
+                { emoji: '🍬', cat: 'envoltorio', fact: 'Los envoltorios de caramelos tardan hasta 40 años en descomponerse.' },
             ];
 
             const MISSIONS = [
                 { accepts: ['🧴'], name: 'Recoge botellas de plástico', icon: '🧴', target: 8, prize: 'ball' },
-                { accepts: ['📰', '📦', '📄'], name: 'Recoge papel y cartón', icon: '📰', target: 7, prize: 'swing' },
-                { accepts: ['🍌', '🍉', '🍎'], name: 'Recoge cáscaras de plátano, de sandía y manzanas mordidas', icon: '🍉', target: 6, prize: 'stroller' },
-                { accepts: ['💩'], name: 'Recoge los residuos sanitarios', icon: '💩', target: 4, prize: 'pool' },
+                { accepts: ['📰', '📦', '📄'], name: 'Recoge papel y cartón', icon: '📰', target: 7, prize: 'ballgoal' },
+                { accepts: ['🍌', '🍉', '🍎'], name: 'Recoge cáscaras de plátano, de sandía y manzanas mordidas', icon: '🍉', target: 6, prize: 'seesaw' },
+                { accepts: ['💩'], name: 'Recoge los residuos sanitarios', icon: '💩', target: 4, prize: 'swing' },
+                { accepts: ['🪣'], name: 'Recoge bolsas de plástico', icon: '🪣', target: 7, prize: 'stroller' },
+                { accepts: ['🥤'], name: 'Recoge sorbetes de plástico', icon: '🥤', target: 6, prize: 'pool' },
+                { accepts: ['🍬'], name: 'Recoge envoltorios de plástico', icon: '🍬', target: 5, prize: 'bicycle' },
             ];
             const MAX_LEVEL = MISSIONS.length;
 
             const PRIZES_INFO = {
-                ball: { name: 'Pelota con arco', emoji: '⚽' },
+                ball: { name: 'Pelota amarilla', emoji: '⚽' },
+                ballgoal: {
+                    name: 'Pelota con arco', emoji: '⚽',
+                    svg: '<svg viewBox="0 0 52 52" width="44" height="44">' +
+                        '<path d="M5 47 L5 14 L47 14 L47 47" fill="none" stroke="#ffffff" stroke-width="3"/>' +
+                        '<line x1="15" y1="14" x2="15" y2="47" stroke="#ffffff" stroke-width="1.5"/>' +
+                        '<line x1="26" y1="14" x2="26" y2="47" stroke="#ffffff" stroke-width="1.5"/>' +
+                        '<line x1="37" y1="14" x2="37" y2="47" stroke="#ffffff" stroke-width="1.5"/>' +
+                        '<line x1="5" y1="25" x2="47" y2="25" stroke="#ffffff" stroke-width="1.5"/>' +
+                        '<line x1="5" y1="36" x2="47" y2="36" stroke="#ffffff" stroke-width="1.5"/>' +
+                        '</svg>',
+                },
+                seesaw: {
+                    name: 'Sube y baja', emoji: '🛝',
+                    svg: '<svg viewBox="0 0 52 52" width="44" height="44">' +
+                        '<line x1="5" y1="47" x2="48" y2="47" stroke="#5d4037" stroke-width="2.5"/>' +
+                        '<path d="M32 47 L45 47 L39 34 Z" fill="#a1887f" stroke="#5d4037" stroke-width="1"/>' +
+                        '<rect x="28" y="31" width="20" height="3.5" rx="1.5" fill="#8d6e63" transform="rotate(-10 38 33)"/>' +
+                        '</svg>',
+                },
                 swing: {
-                    name: 'Columpio y sube y baja', emoji: '🛝',
+                    name: 'Columpio', emoji: '🛝',
                     svg: '<svg viewBox="0 0 52 52" width="44" height="44">' +
                         '<path d="M5 47 L17 14 L29 47" fill="none" stroke="#5d4037" stroke-width="2.5"/>' +
                         '<line x1="12" y1="21" x2="12" y2="33" stroke="#5d4037" stroke-width="1.5"/>' +
                         '<line x1="22" y1="21" x2="22" y2="33" stroke="#5d4037" stroke-width="1.5"/>' +
                         '<rect x="9" y="33" width="16" height="3.5" rx="1.5" fill="#8d6e63"/>' +
-                        '<line x1="29" y1="47" x2="48" y2="47" stroke="#5d4037" stroke-width="2.5"/>' +
-                        '<path d="M32 47 L45 47 L39 34 Z" fill="#a1887f" stroke="#5d4037" stroke-width="1"/>' +
-                        '<rect x="28" y="31" width="20" height="3.5" rx="1.5" fill="#8d6e63" transform="rotate(-10 38 33)"/>' +
                         '</svg>',
                 },
-                stroller: { name: '03 carritos para pasear niños', emoji: '🚗' },
-                pool: { name: 'Pileta con tobogán', emoji: '🏊' },
+                stroller: { name: '3 carritos para pasear niños', emoji: '🚗' },
+                pool: { name: 'Piscina', emoji: '🏊' },
+                bicycle: { name: '3 bicicletas', emoji: '🚲' },
             };
-            const PRIZE_ORDER = ['ball', 'swing', 'stroller', 'pool'];
+            const PRIZE_ORDER = ['ball', 'ballgoal', 'seesaw', 'swing', 'stroller', 'pool', 'bicycle'];
 
             const PICKUP_R = 28;
             const SPEED = 235;
@@ -1242,10 +1261,21 @@
             function selectPrize(type) {
                 const pr = state.prizes.find((p) => p.type === type);
                 if (!pr || !pr.owned || pr.placed) { sfxHint(); return; }
-                if (type === 'ball') {
+                if (type === 'ballgoal') {
                     // elegir qué arco poner con la pelota
                     state.selectedPrize = null;
+                    state.selectedPrizeType = type;
                     show('ballChoice');
+                    return;
+                }
+                if (type === 'ball') {
+                    // solo la pelota, sin arco
+                    state.selectedPrize = 'ball';
+                    state.selectedVariant = null;
+                    state.ballStage = 'ball';
+                    bannerText('Colocá la pelota amarilla ⚽');
+                    updateBoard();
+                    sfxPick();
                     return;
                 }
                 state.selectedPrize = state.selectedPrize === type ? null : type;
@@ -1254,7 +1284,7 @@
             }
 
             function chooseBallVariant(variant) {
-                state.selectedPrize = 'ball';
+                state.selectedPrize = state.selectedPrizeType || 'ball';
                 state.selectedVariant = variant;
                 state.ballStage = 'arch';
                 hideScreens();
@@ -1265,9 +1295,24 @@
             }
 
             function placePrizeAt(x, y) {
-                if (state.selectedPrize === 'ball') {
-                    const pr = state.prizes.find((p) => p.type === 'ball');
+                if (state.selectedPrize === 'ball' || state.selectedPrize === 'ballgoal') {
+                    const pr = state.prizes.find((p) => p.type === state.selectedPrize);
                     if (!pr || !pr.owned || pr.placed) { sfxHint(); return; }
+                    if (state.selectedPrize === 'ball' && state.ballStage === 'ball') {
+                        // solo la pelota, sin arco
+                        pr.ballX = x;
+                        pr.ballY = y;
+                        pr.placed = true;
+                        state.selectedPrize = null;
+                        state.selectedVariant = null;
+                        state.ballStage = null;
+                        spawnParticles(x, y, '#ffd54f');
+                        popup(x, y - 40, `${PRIZES_INFO[pr.type].name} colocado`, '#fff176');
+                        sfxGood();
+                        updateBoard();
+                        if (state.prizes.every((p) => p.placed)) finishPlacement();
+                        return;
+                    }
                     if (state.ballStage === 'arch') {
                         pr.archX = x;
                         pr.archY = y;
@@ -1286,7 +1331,7 @@
                         state.selectedVariant = null;
                         state.ballStage = null;
                         spawnParticles(x, y, '#ffd54f');
-                        popup(x, y - 40, `${PRIZES_INFO.ball.name} colocado`, '#fff176');
+                        popup(x, y - 40, `${PRIZES_INFO[pr.type].name} colocado`, '#fff176');
                         sfxGood();
                         updateBoard();
                         if (state.prizes.every((p) => p.placed)) finishPlacement();
@@ -1384,9 +1429,12 @@
             function startParkOpening() {
                 $('replayBtn').classList.remove('hidden');
                 const swingPr = state.prizes.find((p) => p.type === 'swing');
-                const poolPr = state.prizes.find((p) => p.type === 'pool');
-                const carPr = state.prizes.find((p) => p.type === 'stroller');
+                const seesawPr = state.prizes.find((p) => p.type === 'seesaw');
                 const ballPr = state.prizes.find((p) => p.type === 'ball');
+                const ballgoalPr = state.prizes.find((p) => p.type === 'ballgoal');
+                const strollerPr = state.prizes.find((p) => p.type === 'stroller');
+                const poolPr = state.prizes.find((p) => p.type === 'pool');
+                const bicyclePr = state.prizes.find((p) => p.type === 'bicycle');
 
                 // adultos que entran al parque
                 const adults = [
@@ -1423,21 +1471,36 @@
                     const swingKid = addChild('swing', swingPr.x - 46 * S_SWING, swingPr.y - 10 * S_SWING, next());
                     swingKid.swingPivotX = swingPr.x - 48 * S_SWING;
                     swingKid.swingPivotY = swingPr.y - 44 * S_SWING;
-                    // sube y baja: un niño de cada lado
-                    addChild('seesaw', swingPr.x + 38 * S_SWING, swingPr.y - 10 * S_SWING, next(), 1);
-                    addChild('seesaw', swingPr.x + 106 * S_SWING, swingPr.y - 10 * S_SWING, next(), -1);
                 }
-                if (poolPr && poolPr.placed) {
-                    // pileta: nadan y chapotean
-                    addChild('pool', poolPr.x - 10, poolPr.y, next());
-                    addChild('pool', poolPr.x - 30, poolPr.y, next());
+                if (seesawPr && seesawPr.placed) {
+                    // sube y baja: dos niños coordinados
+                    const kid1 = addChild('seesaw', seesawPr.x - 30, seesawPr.y - 15, next(), 1);
+                    const kid2 = addChild('seesaw', seesawPr.x + 30, seesawPr.y - 15, next(), -1);
+                    kid1.seesawPartner = kid2;
+                    kid2.seesawPartner = kid1;
                 }
-                if (carPr && carPr.placed) {
+                if (ballPr && ballPr.ballX != null) {
+                    // pelota según el arco elegido
+                    const kid1 = addChild('ball', ballPr.ballX - 50, ballPr.ballY, next());
+                    const kid2 = addChild('ball', ballPr.ballX + 45, ballPr.ballY, next());
+                    const arc = ballPr.variant === 'volley' ? 24 : 5;
+                    const ay = ballPr.variant === 'volley' ? ballPr.archY - 55 : ballPr.archY - 4;
+                    state.playBall = { t: 0, arc, ax: ballPr.archX, ay, kids: [kid1, kid2], current: 0, shoot: true };
+                }
+                if (ballgoalPr && ballgoalPr.ballX != null) {
+                    // pelota con arco según el arco elegido
+                    const kid1 = addChild('ball', ballgoalPr.ballX - 50, ballgoalPr.ballY, next());
+                    const kid2 = addChild('ball', ballgoalPr.ballX + 45, ballgoalPr.ballY, next());
+                    const arc = ballgoalPr.variant === 'volley' ? 24 : 5;
+                    const ay = ballgoalPr.variant === 'volley' ? ballgoalPr.archY - 55 : ballgoalPr.archY - 4;
+                    state.playBall = { t: 0, arc, ax: ballgoalPr.archX, ay, kids: [kid1, kid2], current: 0, shoot: true };
+                }
+                if (strollerPr && strollerPr.placed) {
                     // carritos: un niño por carro, se sube adentro y lo maneja
                     const carSeats = [
-                        { x: carPr.x - 110.16, y: carPr.y - 12.24, ph: 0 },
-                        { x: carPr.x + 110.16, y: carPr.y - 12.24, ph: 2 },
-                        { x: carPr.x, y: carPr.y - 89.76, ph: 4 },
+                        { x: strollerPr.x - 60, y: strollerPr.y, ph: 0 },
+                        { x: strollerPr.x, y: strollerPr.y - 30, ph: 2 },
+                        { x: strollerPr.x + 60, y: strollerPr.y, ph: 4 },
                     ];
                     carSeats.forEach((s) => {
                         const kid = addChild('cars', s.x, s.y, next());
@@ -1447,13 +1510,22 @@
                         kid.driving = true;
                     });
                 }
-                if (ballPr && ballPr.ballX != null) {
-                    // pelota según el arco elegido
-                    const kid1 = addChild('ball', ballPr.ballX - 50, ballPr.ballY, next());
-                    const kid2 = addChild('ball', ballPr.ballX + 45, ballPr.ballY, next());
-                    const arc = ballPr.variant === 'basket' ? 40 : ballPr.variant === 'volley' ? 24 : 5;
-                    const ay = ballPr.variant === 'basket' ? ballPr.archY - 46 : ballPr.variant === 'volley' ? ballPr.archY - 55 : ballPr.archY - 4;
-                    state.playBall = { t: 0, arc, ax: ballPr.archX, ay, kids: [kid1, kid2], current: 0, shoot: true };
+                if (poolPr && poolPr.placed) {
+                    // piscina: niños nadando
+                    addChild('pool', poolPr.x - 30, poolPr.y, next());
+                    addChild('pool', poolPr.x + 30, poolPr.y, next());
+                }
+                if (bicyclePr && bicyclePr.placed) {
+                    // bicicletas: niños andando
+                    const bikeSpots = [
+                        { x: bicyclePr.x - 50, y: bicyclePr.y },
+                        { x: bicyclePr.x, y: bicyclePr.y - 25 },
+                        { x: bicyclePr.x + 50, y: bicyclePr.y },
+                    ];
+                    bikeSpots.forEach((s) => {
+                        const kid = addChild('bicycle', s.x, s.y, next());
+                        kid.bikePhase = Math.random() * Math.PI * 2;
+                    });
                 }
 
                 // niños que corren por todo el parque (sin juego asignado)
@@ -2240,9 +2312,8 @@
                 ctx.save();
                 ctx.translate(x, y);
                 ctx.scale(1.7, 1.7);
-                if (type === 'pool') ctx.scale(3.0, 3.0); // la pileta es más grande
-                else if (type === 'swing') ctx.scale(1.25, 1.25); // columpios más grandes
-                else if (type === 'stroller') ctx.scale(1.2, 1.2); // carros más grandes
+                if (type === 'swing') ctx.scale(1.25, 1.25); // columpios más grandes
+                else if (type === 'seesaw') ctx.scale(1.25, 1.25); // sube y baja más grande
                 switch (type) {
                     case 'ball_arch': {
                         // solo el arco elegido (sin la pelota)
@@ -2260,30 +2331,6 @@
                             ctx.lineWidth = 3;
                             ctx.beginPath();
                             ctx.moveTo(-26, 0); ctx.lineTo(-26, -30); ctx.lineTo(26, -30); ctx.lineTo(26, 0);
-                            ctx.stroke();
-                        } else if (variant === 'basket') {
-                            // aro de básquet
-                            ctx.strokeStyle = '#8d6e63';
-                            ctx.lineWidth = 5;
-                            ctx.beginPath();
-                            ctx.moveTo(18, 0); ctx.lineTo(18, -34);
-                            ctx.stroke();
-                            ctx.fillStyle = '#ffffff';
-                            ctx.fillRect(-4, -34, 16, 13);
-                            ctx.strokeStyle = '#b0b0b0';
-                            ctx.lineWidth = 1.5;
-                            ctx.strokeRect(-4, -34, 16, 13);
-                            ctx.strokeStyle = '#ff5722';
-                            ctx.lineWidth = 3;
-                            ctx.beginPath();
-                            ctx.arc(0, -29, 6, 0, Math.PI * 2);
-                            ctx.stroke();
-                            ctx.strokeStyle = '#e0e0e0';
-                            ctx.lineWidth = 1;
-                            ctx.beginPath();
-                            ctx.moveTo(-6, -23); ctx.lineTo(-4, -17); ctx.lineTo(4, -17); ctx.lineTo(6, -23);
-                            ctx.moveTo(-5, -22); ctx.lineTo(0, -16); ctx.lineTo(5, -22);
-                            ctx.moveTo(0, -23); ctx.lineTo(0, -15);
                             ctx.stroke();
                         } else if (variant === 'volley') {
                             // red de vóley
@@ -2350,21 +2397,24 @@
                         ctx.fillStyle = '#8d6e63';
                         ctx.fillRect(-22, 30, 48, 8);
                         ctx.restore();
-                        // sube y baja (más grande y a la derecha)
+                        break;
+                    }
+                    case 'seesaw': {
+                        // sube y baja (más grande)
                         ctx.strokeStyle = '#5d4037';
                         ctx.lineWidth = 4;
                         ctx.beginPath();
-                        ctx.moveTo(48, 0); ctx.lineTo(96, 0);
+                        ctx.moveTo(-48, 0); ctx.lineTo(48, 0);
                         ctx.stroke();
                         ctx.fillStyle = '#8d6e63';
                         ctx.beginPath();
-                        ctx.moveTo(52, 0); ctx.lineTo(92, 0); ctx.lineTo(72, -14);
+                        ctx.moveTo(-44, 0); ctx.lineTo(44, 0); ctx.lineTo(0, -14);
                         ctx.closePath();
                         ctx.fill();
                         // tabla que sube y baja cuando hay niños
                         const seesawAngle = kidsAt('seesaw') ? Math.sin(state.bob * 2) * 0.32 : 0.14;
                         ctx.save();
-                        ctx.translate(72, -10);
+                        ctx.translate(0, -10);
                         ctx.rotate(seesawAngle);
                         ctx.fillStyle = '#a1887f';
                         ctx.fillRect(-34, -5, 68, 8);
@@ -2375,127 +2425,114 @@
                         break;
                     }
                     case 'stroller': {
-                        // 3 carritos para pasear niños: uno arriba de los otros dos, todos separados
-                        const carsMove = kidsAt('cars');
+                        // 3 carritos para pasear niños
                         const cars = [
-                            { dx: -54, dy: 4, ph: 0 },
-                            { dx: 54, dy: 4, ph: 2 },
-                            { dx: 0, dy: -34, ph: 4 },
+                            { dx: -40, dy: 0 },
+                            { dx: 0, dy: -20 },
+                            { dx: 40, dy: 0 },
                         ];
                         cars.forEach((c) => {
-                            // dan vueltas en círculo alrededor de su lugar
-                            const orbit = carsMove ? 10 : 0;
-                            const a = state.bob * 1.6 + c.ph;
-                            const ox = Math.cos(a) * orbit;
-                            const oy = Math.sin(a) * orbit;
                             ctx.save();
-                            ctx.translate(c.dx + ox, c.dy + oy);
+                            ctx.translate(c.dx, c.dy);
                             // ruedas
                             ctx.fillStyle = '#263238';
                             ctx.beginPath();
-                            ctx.arc(-12, -3, 6, 0, Math.PI * 2);
-                            ctx.arc(12, -3, 6, 0, Math.PI * 2);
+                            ctx.arc(-8, 2, 4, 0, Math.PI * 2);
+                            ctx.arc(8, 2, 4, 0, Math.PI * 2);
                             ctx.fill();
-                            ctx.strokeStyle = '#1b1f21';
-                            ctx.lineWidth = 2;
-                            ctx.beginPath();
-                            ctx.arc(-12, -3, 6, 0, Math.PI * 2);
-                            ctx.arc(12, -3, 6, 0, Math.PI * 2);
-                            ctx.stroke();
-                            ctx.fillStyle = '#9e9e9e';
-                            ctx.beginPath();
-                            ctx.arc(-12, -3, 2.5, 0, Math.PI * 2);
-                            ctx.arc(12, -3, 2.5, 0, Math.PI * 2);
-                            ctx.fill();
-                            // rayos girando
-                            ctx.save();
-                            ctx.translate(-12, -3);
-                            ctx.rotate(carsMove ? state.bob * 4 : 0);
-                            ctx.strokeStyle = '#78909c';
-                            ctx.lineWidth = 1.5;
-                            ctx.beginPath();
-                            ctx.moveTo(-4, 0); ctx.lineTo(4, 0);
-                            ctx.moveTo(0, -4); ctx.lineTo(0, 4);
-                            ctx.stroke();
-                            ctx.restore();
-                            ctx.save();
-                            ctx.translate(12, -3);
-                            ctx.rotate(carsMove ? state.bob * 4 : 0);
-                            ctx.strokeStyle = '#78909c';
-                            ctx.lineWidth = 1.5;
-                            ctx.beginPath();
-                            ctx.moveTo(-4, 0); ctx.lineTo(4, 0);
-                            ctx.moveTo(0, -4); ctx.lineTo(0, 4);
-                            ctx.stroke();
-                            ctx.restore();
                             // carrocería
                             ctx.fillStyle = '#c62828';
                             ctx.beginPath();
-                            ctx.roundRect ? ctx.roundRect(-20, -15, 40, 12, 5) : ctx.rect(-20, -15, 40, 12);
+                            ctx.roundRect ? ctx.roundRect(-12, -8, 24, 10, 3) : ctx.rect(-12, -8, 24, 10);
                             ctx.fill();
-                            ctx.strokeStyle = '#8e1a1a';
-                            ctx.lineWidth = 2;
-                            ctx.stroke();
-                            // cabina / techo
+                            // techo
                             ctx.fillStyle = '#e53935';
                             ctx.beginPath();
-                            ctx.roundRect ? ctx.roundRect(-9, -25, 24, 11, 4) : ctx.rect(-9, -25, 24, 11);
+                            ctx.roundRect ? ctx.roundRect(-6, -14, 14, 7, 2) : ctx.rect(-6, -14, 14, 7);
                             ctx.fill();
                             // ventanas
                             ctx.fillStyle = '#b3e5fc';
-                            ctx.beginPath();
-                            ctx.roundRect ? ctx.roundRect(-6, -22, 8, 6, 2) : ctx.rect(-6, -22, 8, 6);
-                            ctx.roundRect ? ctx.roundRect(5, -22, 8, 6, 2) : ctx.rect(5, -22, 8, 6);
-                            ctx.fill();
-                            // faro delantero
-                            ctx.fillStyle = '#ffeb3b';
-                            ctx.beginPath();
-                            ctx.arc(18, -11, 3, 0, Math.PI * 2);
-                            ctx.fill();
-                            ctx.strokeStyle = '#ffeb3b';
-                            ctx.lineWidth = 1.5;
-                            ctx.beginPath();
-                            ctx.arc(18, -11, 5, 0, Math.PI * 2);
-                            ctx.stroke();
-                            // luces traseras
-                            ctx.fillStyle = '#ff8a80';
-                            ctx.beginPath();
-                            ctx.arc(-19, -11, 2.5, 0, Math.PI * 2);
-                            ctx.fill();
+                            ctx.fillRect(-4, -12, 5, 4);
+                            ctx.fillRect(2, -12, 5, 4);
                             ctx.restore();
                         });
                         break;
                     }
                     case 'pool': {
-                        // pileta
-                        const poolAnim = kidsAt('pool');
-                        // agua con superficie ondulada cuando hay niños
+                        // piscina más grande
+                        const poolW = 100, poolH = 50;
                         ctx.fillStyle = '#90caf9';
                         ctx.beginPath();
-                        ctx.moveTo(-26, -6);
-                        if (poolAnim) {
-                            for (let i = -26; i <= 20; i += 2) {
-                                ctx.lineTo(i, -6 + Math.sin(state.bob * 3 + i * 0.4) * 2);
-                            }
-                        } else {
-                            ctx.lineTo(20, -6);
-                        }
-                        ctx.lineTo(20, 6);
-                        ctx.lineTo(-26, 6);
-                        ctx.closePath();
+                        ctx.roundRect ? ctx.roundRect(-poolW/2, -poolH/2, poolW, poolH, 8) : ctx.rect(-poolW/2, -poolH/2, poolW, poolH);
                         ctx.fill();
                         ctx.strokeStyle = '#1e88e5';
-                        ctx.lineWidth = 3;
-                        ctx.strokeRect(-26, -6, 46, 12);
+                        ctx.lineWidth = 4;
+                        ctx.beginPath();
+                        ctx.roundRect ? ctx.roundRect(-poolW/2, -poolH/2, poolW, poolH, 8) : ctx.rect(-poolW/2, -poolH/2, poolW, poolH);
+                        ctx.stroke();
+                        // agua ondulada
+                        ctx.strokeStyle = '#42a5f5';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        for (let i = -poolW/2 + 5; i <= poolW/2 - 5; i += 2) {
+                            ctx.lineTo(i, -5 + Math.sin(state.bob * 3 + i * 0.2) * 3);
+                        }
+                        ctx.stroke();
+                        ctx.beginPath();
+                        for (let i = -poolW/2 + 5; i <= poolW/2 - 5; i += 2) {
+                            ctx.lineTo(i, 5 + Math.sin(state.bob * 2.5 + i * 0.25 + 1) * 2);
+                        }
+                        ctx.stroke();
                         break;
                     }
+                    case 'bicycle': {
+                        // 3 bicicletas
+                        const bikes = [
+                            { dx: -30, dy: 0 },
+                            { dx: 0, dy: -15 },
+                            { dx: 30, dy: 0 },
+                        ];
+                        bikes.forEach((b) => {
+                            ctx.save();
+                            ctx.translate(b.dx, b.dy);
+                            // ruedas
+                            ctx.strokeStyle = '#333333';
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.arc(-10, 4, 7, 0, Math.PI * 2);
+                            ctx.stroke();
+                            ctx.beginPath();
+                            ctx.arc(10, 4, 7, 0, Math.PI * 2);
+                            ctx.stroke();
+                            // cuadro
+                            ctx.strokeStyle = '#e53935';
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.moveTo(-10, 4); ctx.lineTo(-2, -6); ctx.lineTo(10, 4);
+                            ctx.moveTo(-2, -6); ctx.lineTo(0, -10);
+                            ctx.moveTo(-2, -6); ctx.lineTo(6, -6);
+                            ctx.stroke();
+                            // manillar
+                            ctx.strokeStyle = '#333333';
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.moveTo(4, -8); ctx.lineTo(8, -8);
+                            ctx.stroke();
+                            // asiento
+                            ctx.fillStyle = '#5d4037';
+                            ctx.fillRect(-4, -8, 6, 3);
+                            ctx.restore();
+                        });
+                        break;
+                    }
+
                 }
                 ctx.restore();
             }
 
             function drawPrizes() {
                 state.prizes.forEach((pr) => {
-                    if (pr.type === 'ball') {
+                    if (pr.type === 'ball' || pr.type === 'ballgoal') {
                         // el arco se dibuja apenas se coloca; la pelota cuando se coloca después
                         if (pr.archX != null && pr.archY != null) {
                             ctx.fillStyle = '#549853';
@@ -2946,7 +2983,7 @@
                 $('restartBtn').addEventListener('click', resetGame);
                 $('finishBtn').addEventListener('click', finishPlacement);
                 $('soccerBtn').addEventListener('click', () => chooseBallVariant('soccer'));
-                $('basketBtn').addEventListener('click', () => chooseBallVariant('basket'));
+
                 $('volleyBtn').addEventListener('click', () => chooseBallVariant('volley'));
 
                 $('musicBtn').addEventListener('click', () => {
