@@ -13,20 +13,15 @@
     const FLOWERS = [[300, 120], [600, 120], [330, 520], [580, 520], [450, 200], [450, 440]];
 
     const ITEMS = [
-        { emoji: '🥛', cat: 'descartable', fact: 'Los vasos descartables tardan hasta 30 años en descomponerse.' },
+        { emoji: '🥛', cat: 'descartable', fact: 'Gracias a la invensión de los vasos de plastico logra evitar contagios, al no compartir tazas.' },
         { emoji: '🥕', cat: 'organico', fact: 'La composta hecha con restos orgánicos enriquece el suelo.' },
         { emoji: '🧴', cat: 'plastico', fact: 'Una botella de plástico tarda hasta 500 años en degradarse.' },
         { emoji: '🛍️', cat: 'plastico', fact: 'Cada año terminan en el mar 8 millones de toneladas de plástico.' },
         { emoji: '🥤', cat: 'plastico', fact: '¡Reutilizar bolsas evita miles de bolsas plásticas al año!' },
-        { emoji: '🧴', cat: 'plastico', fact: 'Las botellas de plástico tardan hasta 450 años en descomponerse.' },
-        { emoji: '🛢️', cat: 'galon', fact: 'Los galones de plástico tardan cientos de años en descomponerse.' },
-        { emoji: '🍾', cat: 'vidrio', fact: 'El vidrio se puede reciclar infinitas veces sin perder calidad.' },
-        { emoji: '🫙', cat: 'vidrio', fact: 'El vidrio tarda 4.000 años en descomponerse en la naturaleza.' },
-        { emoji: '🥃', cat: 'vidrio', fact: 'Reciclar una botella de vidrio ahorra energía para encender una ampolleta 4 horas.' },
-        { emoji: '🫙', cat: 'taper', fact: 'Los frascos de plástico se pueden reciclar y reutilizar.' },
-        { emoji: '🛍️', cat: 'bolsa', fact: 'Las bolsas plásticas tardan hasta 20 años en descomponerse.' },
-        { emoji: '🥤', cat: 'sorbete', fact: 'Los sorbetes de plástico contaminan los océanos y matan a los animales marinos.' },
-        { emoji: '🍬', cat: 'envoltorio', fact: 'Los envoltorios de caramelos tardan hasta 40 años en descomponerse.' },
+        { emoji: '🛢️', cat: 'galon', fact: '¿Sabías que los galones de plástico se podían transformar en lindas macetas?' },
+        { emoji: '🫙', cat: 'taper', fact: '¿Sabías que los toppers de plástico están hechos de polímeros sintéticos derivados del petróleo?' },
+        { emoji: '🪥', cat: 'sorbete', fact: 'Los sorbetes de plástico contaminan los océanos y matan a los animales marinos.' },
+        { emoji: '🍬', cat: 'envoltorio', fact: 'Cuando intentas abrir el envoltorio del caramelo en un lugar con mucho silencio hace mucho ruido.' },
     ];
 
     const MISSIONS = [
@@ -35,7 +30,7 @@
         { accepts: ['🥛'], name: 'Recoge vasos descartables', icon: '🥛', target: 6, prize: 'seesaw' },
         { accepts: ['🫙'], name: 'Recoge tapers de plástico', icon: '🫙', target: 4, prize: 'swing' },
         { accepts: ['🛍️'], name: 'Recoge bolsas de plástico', icon: '🛍️', target: 7, prize: 'stroller' },
-        { accepts: ['🥤'], name: 'Recoge sorbetes de plástico', icon: '🥤', target: 6, prize: 'pool' },
+        { accepts: ['🪥'], name: 'Recoge sorbetes de plástico', icon: '🪥', target: 6, prize: 'pool' },
         { accepts: ['🍬'], name: 'Recoge envoltorios de plástico', icon: '🍬', target: 5, prize: 'bicycle' },
     ];
     const MAX_LEVEL = MISSIONS.length;
@@ -551,6 +546,7 @@
     }
 
     function selectPrize(type) {
+        if (state.running) return;
         const pr = state.prizes.find((p) => p.type === type);
         if (!pr || !pr.owned || pr.placed) { sfxHint(); return; }
         if (type === 'ballgoal') {
@@ -1341,9 +1337,29 @@
         if (emoji === '🛢️') return drawPlasticGallon(x, y);
         if (emoji === '🫙') return drawPlasticJar(x, y);
         if (emoji === '🛍️') return drawPlasticBag(x, y);
+        if (emoji === '🪥') return drawStraw(x, y);
         ctx.font = size + 'px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(emoji, x, y);
+    }
+
+    function drawStraw(x, y) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(0.2);
+        ctx.fillStyle = '#e53935';
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(-2, -20, 4, 32, 2) : ctx.rect(-2, -20, 4, 32);
+        ctx.fill();
+        ctx.strokeStyle = '#b71c1c';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-2, -16);
+        ctx.lineTo(2, -16);
+        ctx.moveTo(-2, -12);
+        ctx.lineTo(2, -12);
+        ctx.stroke();
+        ctx.restore();
     }
 
     function drawPlasticBag(x, y) {
