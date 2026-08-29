@@ -101,6 +101,7 @@
         lastCollected: null,
         lastCollectedAlpha: 0,
         bikeTimer: null,
+        missionIntro: null,
         timer: 0,
         timeLimit: 50,
         shake: 0,
@@ -395,6 +396,8 @@
         }
         if (!keepPos) spawnAllItems();
         state.roundFacts = [];
+        state.running = false;
+        state.missionIntro = { text: m.name, icon: m.icon, timer: 3 };
         updateHUD();
     }
 
@@ -2409,6 +2412,14 @@
         state.popups.forEach((pu) => { pu.y -= 30 * dt; pu.life -= dt; });
         state.popups = state.popups.filter((pu) => pu.life > 0);
 
+        if (state.missionIntro) {
+            state.missionIntro.timer -= dt;
+            if (state.missionIntro.timer <= 0) {
+                state.missionIntro = null;
+                state.running = true;
+            }
+        }
+
         // gente en el parque
         state.people.forEach((p) => {
             p.walk += dt;
@@ -2557,6 +2568,22 @@
         drawParticles();
         drawPopups();
         ctx.restore();
+
+        if (state.missionIntro) {
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(0, 0, W, H);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = 'bold 48px "Segoe UI", sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = '#000';
+            ctx.shadowBlur = 6;
+            ctx.fillText(state.missionIntro.icon + ' ' + state.missionIntro.text, W / 2, H / 2 - 20);
+            ctx.font = '28px "Segoe UI", sans-serif';
+            ctx.fillStyle = '#a5d6a7';
+            ctx.fillText('Misión ' + (state.missionIndex + 1) + ' de ' + MAX_LEVEL, W / 2, H / 2 + 35);
+            ctx.shadowBlur = 0;
+        }
     }
 
     function frame(ts) {
