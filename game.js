@@ -840,58 +840,32 @@
         const y = p.oy;
         const step = p.moving ? Math.sin(p.walk * 8) : 0;
         if (p.driving && p.arrived) {
-            const s = 1.5;
-            // carrito siguiendo al niño
-            ctx.fillStyle = '#263238';
-            ctx.beginPath();
-            ctx.arc(x - 12 * s, y + 18 * s, 6 * s, 0, Math.PI * 2);
-            ctx.arc(x + 12 * s, y + 18 * s, 6 * s, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#c62828';
-            ctx.beginPath();
-            ctx.roundRect ? ctx.roundRect(x - 18 * s, y + 3 * s, 36 * s, 15 * s, 4) : ctx.rect(x - 18 * s, y + 3 * s, 36 * s, 15 * s);
-            ctx.fill();
-            ctx.fillStyle = '#e53935';
-            ctx.beginPath();
-            ctx.roundRect ? ctx.roundRect(x - 9 * s, y - 6 * s, 21 * s, 10 * s, 3) : ctx.rect(x - 9 * s, y - 6 * s, 21 * s, 10 * s);
-            ctx.fill();
-            ctx.fillStyle = '#b3e5fc';
-            ctx.fillRect(x - 6 * s, y - 3 * s, 7 * s, 6 * s);
-            ctx.fillRect(x + 3 * s, y - 3 * s, 7 * s, 6 * s);
-            // niñito adentro del carrito: cabeza y hombros asoman
-            ctx.fillStyle = '#4e944e';
-            ctx.beginPath();
-            ctx.ellipse(x, y + 15 * s, 13 * s, 6 * s, 0, 0, Math.PI * 2);
-            ctx.fill();
-            // hombros
+            // niño sentado en el carrito (el carrito lo dibuja el premio)
+            const bob = Math.sin(state.bob * 3 + p.carPhase) * 2;
             ctx.fillStyle = p.shirt;
             ctx.beginPath();
-            ctx.ellipse(x, y, 13 * s, 12 * s, 0, 0, Math.PI * 2);
+            ctx.ellipse(x, y - 8 + bob, 13, 16, 0, 0, Math.PI * 2);
             ctx.fill();
-            // brazos al volante
-            ctx.strokeStyle = p.shirt;
-            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#ffcc80';
+            ctx.lineWidth = 4;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.moveTo(x - 13 * s, y - 1); ctx.lineTo(x - 6 * s, y + 3);
-            ctx.moveTo(x + 13 * s, y - 1); ctx.lineTo(x + 6 * s, y + 3);
+            ctx.moveTo(x - 13, y - 4 + bob); ctx.lineTo(x - 9, y + 2 + bob);
+            ctx.moveTo(x + 13, y - 4 + bob); ctx.lineTo(x + 9, y + 2 + bob);
             ctx.stroke();
-            // cabeza
             ctx.fillStyle = '#ffcc80';
             ctx.beginPath();
-            ctx.arc(x, y - 18 * s, 16 * s, 0, Math.PI * 2);
+            ctx.arc(x, y - 25 + bob, 17, 0, Math.PI * 2);
             ctx.fill();
-            // pelo
             ctx.fillStyle = p.hair;
             ctx.beginPath();
-            ctx.arc(x, y - 22 * s, 16 * s, Math.PI, Math.PI * 2);
+            ctx.arc(x, y - 31 + bob, 17, Math.PI, Math.PI * 2);
             ctx.fill();
-            ctx.fillRect(x - 16 * s, y - 22 * s, 32 * s, 4 * s);
-            // ojos
+            ctx.fillRect(x - 17, y - 31 + bob, 34, 4);
             ctx.fillStyle = '#3e2723';
             ctx.beginPath();
-            ctx.arc(x - 6 * s, y - 18 * s, 2.5 * s, 0, Math.PI * 2);
-            ctx.arc(x + 6 * s, y - 18 * s, 2.5 * s, 0, Math.PI * 2);
+            ctx.arc(x - 6, y - 25 + bob, 2.3, 0, Math.PI * 2);
+            ctx.arc(x + 6, y - 25 + bob, 2.3, 0, Math.PI * 2);
             ctx.fill();
             return;
         }
@@ -900,6 +874,51 @@
         ctx.beginPath();
         ctx.ellipse(x, y + 18, 20, 9, 0, 0, Math.PI * 2);
         ctx.fill();
+
+        if (p.game === 'bicycle') {
+            // niño sobre la bicicleta (la bici la dibuja el premio)
+            const bob = Math.sin(state.bob * 2 + p.bikePhase) * 1.5;
+            // piernas pedaleando
+            const pedAngle = p.playPhase * 4;
+            ctx.strokeStyle = '#ffcc80';
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x - 4, y + 2 + bob);
+            ctx.lineTo(x - 4 + Math.cos(pedAngle) * 5, y + 7 + Math.sin(pedAngle) * 3);
+            ctx.moveTo(x + 4, y + 2 + bob);
+            ctx.lineTo(x + 4 + Math.cos(pedAngle + Math.PI) * 5, y + 7 + Math.sin(pedAngle + Math.PI) * 3);
+            ctx.stroke();
+            // cuerpo
+            ctx.fillStyle = p.shirt;
+            ctx.beginPath();
+            ctx.ellipse(x, y - 6 + bob, 12, 16, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // brazos al manillar
+            ctx.strokeStyle = '#ffcc80';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(x - 10, y - 3 + bob); ctx.lineTo(x + 6, y - 10 + bob);
+            ctx.moveTo(x + 10, y - 3 + bob); ctx.lineTo(x + 8, y - 10 + bob);
+            ctx.stroke();
+            // cabeza
+            ctx.fillStyle = '#ffcc80';
+            ctx.beginPath();
+            ctx.arc(x, y - 24 + bob, 16, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = p.hair;
+            ctx.beginPath();
+            ctx.arc(x, y - 30 + bob, 16, Math.PI, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(x - 16, y - 30 + bob, 32, 4);
+            ctx.fillStyle = '#3e2723';
+            ctx.beginPath();
+            ctx.arc(x - 5, y - 24 + bob, 2.2, 0, Math.PI * 2);
+            ctx.arc(x + 5, y - 24 + bob, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+            return;
+        }
+
         // piernas y pies
         ctx.strokeStyle = '#263238';
         ctx.lineWidth = 5;
@@ -1164,21 +1183,6 @@
         if (state.mission) {
             $('missionText').textContent = state.mission.name;
             $('missionProgress').textContent = `${state.mission.count}/${state.mission.target}`;
-            try {
-                const iconCanvas = $('missionIcon');
-                if (iconCanvas) {
-                    const ictx = iconCanvas.getContext('2d');
-                    ictx.clearRect(0, 0, 32, 32);
-                    ictx.fillStyle = '#2e7d32';
-                    ictx.beginPath();
-                    ictx.roundRect ? ictx.roundRect(0, 0, 32, 32, 4) : ictx.rect(0, 0, 32, 32);
-                    ictx.fill();
-                    const origCtx = ctx;
-                    ctx = ictx;
-                    drawItemGraphic(state.mission.icon, 16, 16, 28);
-                    ctx = origCtx;
-                }
-            } catch (e) {}
         }
 
         const frac = Math.max(0, state.timer) / state.timeLimit;
@@ -1428,7 +1432,6 @@
     }
 
     function drawPlasticBag(x, y) {
-        // bolsa de plástico
         ctx.save();
         ctx.translate(x, y);
         ctx.fillStyle = 'rgba(200, 230, 255, 0.8)';
@@ -1447,6 +1450,9 @@
         ctx.strokeStyle = '#90caf9';
         ctx.lineWidth = 2;
         ctx.stroke();
+        ctx.fillStyle = '#8d6e63';
+        ctx.beginPath(); ctx.arc(-3, 4, 1.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(5, -2, 1, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }
 
@@ -1487,7 +1493,6 @@
     }
 
     function drawPlasticJar(x, y) {
-        // frasco de plástico
         ctx.save();
         ctx.translate(x, y);
         ctx.fillStyle = '#e3f2fd';
@@ -1499,11 +1504,13 @@
         ctx.stroke();
         ctx.fillStyle = '#bbdefb';
         ctx.fillRect(-7, 0, 14, 6);
+        ctx.fillStyle = '#795548';
+        ctx.beginPath(); ctx.arc(-2, 5, 1.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(4, -3, 1, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }
 
     function drawMilkCup(x, y) {
-        // vaso descartable de leche
         ctx.save();
         ctx.translate(x, y);
         ctx.fillStyle = '#f5f5f5';
@@ -1518,6 +1525,9 @@
         ctx.fillRect(-9, -4, 18, 8);
         ctx.fillStyle = '#90caf9';
         ctx.fillRect(-6, -2, 12, 4);
+        ctx.fillStyle = '#8d6e63';
+        ctx.beginPath(); ctx.arc(-3, 6, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(5, 2, 1.5, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }
 
@@ -1683,59 +1693,55 @@
     }
 
     function drawPlasticBottle(x, y) {
-        // botella de plástico azul
         ctx.save();
         ctx.translate(x, y);
-        // cuerpo
         ctx.fillStyle = '#1e88e5';
         ctx.beginPath();
         ctx.roundRect ? ctx.roundRect(-9, -2, 18, 20, 4) : ctx.rect(-9, -2, 18, 20);
         ctx.fill();
-        // cuello
         ctx.fillStyle = '#1e88e5';
         ctx.fillRect(-3, -9, 6, 8);
-        // tapa
         ctx.fillStyle = '#1565c0';
         ctx.fillRect(-4, -12, 8, 4);
-        // brillo
         ctx.fillStyle = '#90caf9';
         ctx.fillRect(-6, 1, 3, 12);
-        // etiqueta
         ctx.fillStyle = '#e3f2fd';
         ctx.fillRect(-9, 6, 18, 6);
         ctx.fillStyle = '#1565c0';
         ctx.fillRect(-6, 8, 12, 2);
+        ctx.fillStyle = '#6d4c41';
+        ctx.beginPath(); ctx.arc(-2, 12, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(6, 3, 1.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-5, -5, 1.5, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }
 
     function drawPlasticGallon(x, y) {
-        // galón de plástico (tipo bidón)
         ctx.save();
         ctx.translate(x, y);
-        // cuerpo principal
         ctx.fillStyle = '#e0e0e0';
         ctx.beginPath();
         ctx.roundRect ? ctx.roundRect(-12, -8, 24, 26, 5) : ctx.rect(-12, -8, 24, 26);
         ctx.fill();
-        // asa superior
         ctx.strokeStyle = '#bdbdbd';
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(-5, -8); ctx.lineTo(-5, -14); ctx.lineTo(5, -14); ctx.lineTo(5, -8);
         ctx.stroke();
-        // tapa
         ctx.fillStyle = '#9e9e9e';
         ctx.fillRect(-6, -16, 12, 4);
-        // etiqueta
         ctx.fillStyle = '#4caf50';
         ctx.fillRect(-10, 0, 20, 10);
         ctx.fillStyle = '#fff';
         ctx.font = '7px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('🛢️', 0, 8);
-        // brillo
         ctx.fillStyle = 'rgba(255,255,255,0.3)';
         ctx.fillRect(-10, -6, 4, 18);
+        ctx.fillStyle = '#795548';
+        ctx.beginPath(); ctx.arc(-4, 12, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(7, -2, 1.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-8, 5, 1.5, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }
 
@@ -2096,7 +2102,6 @@
                 return;
             }
             if (!pr.placed) return;
-            if (pr.type === 'stroller' && state.people.length > 0) return;
             const bob = Math.sin(state.bob * 2 + pr.x) * 2;
             ctx.fillStyle = '#549853';
             ctx.beginPath();
@@ -2305,7 +2310,7 @@
         if (state.selectedPrize) {
             const bx = x + p.dir.x * 28;
             const by = y - 34 + bobY + p.dir.y * 6;
-            if (state.selectedPrize === 'ball') {
+            if (state.selectedPrize === 'ball' || state.selectedPrize === 'ballgoal') {
                 if (state.ballStage === 'ball') drawPrizeGraphic('ball', bx, by, 0, null);
                 else drawPrizeGraphic('ball_arch', bx, by, 0, state.selectedVariant);
             } else {
@@ -2396,13 +2401,17 @@
                     p.ox = p.baseX + Math.sin(p.playPhase * 0.7) * 22;
                     p.oy = p.baseY - Math.abs(Math.sin(p.playPhase * 2.2)) * 7;
                 } else if (p.game === 'cars') {
-                    // el niño va adentro del carrito mientras este da vueltas
+                    // el niño se mueve junto al carrito
                     const a = state.bob * 1.6 + p.carPhase;
-                    p.ox = p.carBaseX + Math.cos(a) * 20.4;
-                    p.oy = p.carBaseY + Math.sin(a) * 20.4;
+                    p.ox = p.carBaseX + Math.cos(a) * 12;
+                    p.oy = p.carBaseY + Math.sin(a) * 6;
                 } else if (p.game === 'ball') {
                     p.ox = p.baseX;
                     p.oy = p.baseY - Math.abs(Math.sin(p.playPhase * 3)) * 4;
+                } else if (p.game === 'bicycle') {
+                    const a = state.bob * 1.2 + p.bikePhase;
+                    p.ox = p.baseX + Math.cos(a) * 12;
+                    p.oy = p.baseY + Math.sin(a) * 6;
                 }
             } else {
                 p.ox = p.x;
