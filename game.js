@@ -5,8 +5,8 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    const W = 900, H = 600;
-    const BOUNDS = { x1: 45, y1: 70, x2: 855, y2: 550 };
+    const W = 1080, H = 600;
+    const BOUNDS = { x1: 45, y1: 70, x2: 1035, y2: 550 };
 
     const TREES = [[200, 200], [700, 200], [200, 420], [700, 420], [90, 290], [810, 290], [450, 540]];
 
@@ -146,7 +146,7 @@
             const x = BOUNDS.x1 + Math.random() * (BOUNDS.x2 - BOUNDS.x1);
             const y = BOUNDS.y1 + Math.random() * (BOUNDS.y2 - BOUNDS.y1);
             if (dist(x, y, state.player.x, state.player.y) < 60) continue;
-            if (x > 770 && y > 490) continue;
+            if (x > 960 && y > 490) continue;
             if (avoidItems && state.items.some((it) => dist(x, y, it.x, it.y) < 55)) continue;
             return { x, y };
         }
