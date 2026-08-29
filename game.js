@@ -27,11 +27,11 @@
     const MISSIONS = [
         { accepts: ['🧴'], name: 'Recoge solo botellas de plástico', icon: '🧴', target: 8, prize: 'ball' },
         { accepts: ['🛢️'], name: 'Recoge galones de plástico', icon: '🛢️', target: 7, prize: 'ballgoal' },
-        { accepts: ['🥛'], name: 'Recoge vasos descartables', icon: '🥛', target: 6, prize: 'seesaw' },
+        { accepts: ['🥛'], name: 'Recoge vasos de plástico', icon: '🥛', target: 6, prize: 'seesaw' },
         { accepts: ['🫙'], name: 'Recoge tapers de plástico', icon: '🫙', target: 4, prize: 'swing' },
         { accepts: ['🛍️'], name: 'Recoge bolsas de plástico', icon: '🛍️', target: 7, prize: 'stroller' },
         { accepts: ['🪥'], name: 'Recoge sorbetes de plástico', icon: '🪥', target: 6, prize: 'pool' },
-        { accepts: ['🍬'], name: 'Recoge envoltorios de plástico', icon: '🍬', target: 5, prize: 'bicycle' },
+        { accepts: ['🍬'], name: 'Recoge envoltorios de dulces', icon: '🍬', target: 5, prize: 'bicycle' },
     ];
     const MAX_LEVEL = MISSIONS.length;
 
@@ -827,6 +827,10 @@
                 arrived: false, moving: true, wander: true, idle: 0, playPhase: i * 0.5, seed: i,
             });
         }
+
+        setTimeout(() => {
+            show('congratsScreen');
+        }, 9000);
     }
 
     function drawPerson(p) {
@@ -834,7 +838,24 @@
         const y = p.oy;
         const step = p.moving ? Math.sin(p.walk * 8) : 0;
         if (p.driving && p.arrived) {
-            // niñito adentro del carrito: cabeza y hombros asoman (solo cuando está adentro)
+            // carrito siguiendo al niño
+            ctx.fillStyle = '#263238';
+            ctx.beginPath();
+            ctx.arc(x - 8, y + 12, 4, 0, Math.PI * 2);
+            ctx.arc(x + 8, y + 12, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#c62828';
+            ctx.beginPath();
+            ctx.roundRect ? ctx.roundRect(x - 12, y + 2, 24, 10, 3) : ctx.rect(x - 12, y + 2, 24, 10);
+            ctx.fill();
+            ctx.fillStyle = '#e53935';
+            ctx.beginPath();
+            ctx.roundRect ? ctx.roundRect(x - 6, y - 4, 14, 7, 2) : ctx.rect(x - 6, y - 4, 14, 7);
+            ctx.fill();
+            ctx.fillStyle = '#b3e5fc';
+            ctx.fillRect(x - 4, y - 2, 5, 4);
+            ctx.fillRect(x + 2, y - 2, 5, 4);
+            // niñito adentro del carrito: cabeza y hombros asoman
             ctx.fillStyle = '#4e944e';
             ctx.beginPath();
             ctx.ellipse(x, y + 10, 9, 4, 0, 0, Math.PI * 2);
@@ -977,7 +998,7 @@
             if (i < facts.length) {
                 showSpeech(`💡 ${facts[i]}`);
                 i++;
-                setTimeout(next, 4200);
+                setTimeout(next, 9000);
             } else if (state.missionIndex >= MAX_LEVEL - 1) {
                 win();
             } else {
@@ -1116,7 +1137,7 @@
 
     // ---------- UI ----------
     function hideScreens() {
-        ['selectScreen', 'startScreen', 'gameOverScreen', 'ballChoice'].forEach((id) => $(id).classList.add('hidden'));
+        ['selectScreen', 'startScreen', 'gameOverScreen', 'ballChoice', 'congratsScreen'].forEach((id) => $(id).classList.add('hidden'));
     }
 
     function show(id) {
@@ -1338,6 +1359,7 @@
         if (emoji === '🫙') return drawPlasticJar(x, y);
         if (emoji === '🛍️') return drawPlasticBag(x, y);
         if (emoji === '🪥') return drawStraw(x, y);
+        if (emoji === '🍬') return drawCandyWrapper(x, y);
         ctx.font = size + 'px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(emoji, x, y);
@@ -1359,6 +1381,31 @@
         ctx.moveTo(-2, -12);
         ctx.lineTo(2, -12);
         ctx.stroke();
+        ctx.restore();
+    }
+
+    function drawCandyWrapper(x, y) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.fillStyle = '#f48fb1';
+        ctx.beginPath();
+        ctx.moveTo(-14, -2);
+        ctx.lineTo(-8, -5);
+        ctx.lineTo(8, -5);
+        ctx.lineTo(14, -2);
+        ctx.lineTo(14, 2);
+        ctx.lineTo(8, 5);
+        ctx.lineTo(-8, 5);
+        ctx.lineTo(-14, 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#e91e63';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = '#f8bbd0';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 7, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
     }
 
@@ -2031,6 +2078,7 @@
                 return;
             }
             if (!pr.placed) return;
+            if (pr.type === 'stroller' && state.people.length > 0) return;
             const bob = Math.sin(state.bob * 2 + pr.x) * 2;
             ctx.fillStyle = '#549853';
             ctx.beginPath();
@@ -2212,9 +2260,27 @@
 
         // residuo recogido mostrado brevemente
         if (state.lastCollected) {
-            ctx.font = '32px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(state.lastCollected, x + p.dir.x * 28, y - 42 + bobY + p.dir.y * 8);
+            const lx = x + p.dir.x * 28;
+            const ly = y - 42 + bobY + p.dir.y * 8;
+            if (state.lastCollected === '🍬') {
+                drawCandyWrapper(lx, ly);
+            } else if (state.lastCollected === '🪥') {
+                drawStraw(lx, ly);
+            } else if (state.lastCollected === '🥛') {
+                drawMilkCup(lx, ly);
+            } else if (state.lastCollected === '🧴') {
+                drawPlasticBottle(lx, ly);
+            } else if (state.lastCollected === '🛢️') {
+                drawPlasticGallon(lx, ly);
+            } else if (state.lastCollected === '🫙') {
+                drawPlasticJar(lx, ly);
+            } else if (state.lastCollected === '🛍️') {
+                drawPlasticBag(lx, ly);
+            } else {
+                ctx.font = '32px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(state.lastCollected, lx, ly);
+            }
         }
 
         // premio seleccionado (modo colocación) en la mano como vista previa
@@ -2464,6 +2530,7 @@
         });
 
         $('replayBtn').addEventListener('click', resetGame);
+        $('guardianBtn').addEventListener('click', () => { hideScreens(); });
 
         // D-pad táctil
         const press = (key) => { state.keys[key] = true; };
