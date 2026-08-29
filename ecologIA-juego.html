@@ -15,22 +15,32 @@
 
         #musicBtn {
             position: absolute;
-            top: 62px;
+            top: 10px;
             right: 10px;
-            z-index: 30;
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            border: 3px solid #ffffff;
-            background: #2e7d32;
+            background: transparent;
+            border: none;
             color: #fff;
             font-size: 22px;
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+            text-shadow: 2px 2px 0 #000;
+            padding: 0;
+            line-height: 1;
+            z-index: 11;
         }
 
         #musicBtn:hover {
-            background: #388e3c;
+            opacity: 0.8;
+        }
+
+        #livesDisplay {
+            position: absolute;
+            top: 10px;
+            right: 45px;
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: none;
+            z-index: 10;
         }
 
         #replayBtn {
@@ -112,8 +122,16 @@
             margin-right: 18px;
         }
 
-        #ui .right span {
-            margin-left: 10px;
+        #timerDisplay {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 20px;
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: none;
+            z-index: 10;
         }
 
         #progressBar {
@@ -144,8 +162,7 @@
         #missionBanner {
             position: absolute;
             bottom: 16px;
-            left: 25%;
-            transform: translateX(-50%);
+            left: 5px;
             background: #163527;
             border: 2px solid #a5d6a7;
             border-radius: 20px;
@@ -590,23 +607,22 @@
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
 
-        <button id="musicBtn" title="Música de fondo">🔊</button>
-
         <button id="replayBtn" class="hidden">🔄 Volver a jugar</button>
 
         <div id="ui">
             <div class="left">
                 <span id="levelDisplay">📈 Nivel: 1</span>
             </div>
-            <div class="right">
-                <span id="livesDisplay">❤️ ❤️ ❤️</span>
-                <span id="timerDisplay">⏱ 45</span>
-            </div>
         </div>
+
+        <button id="musicBtn" title="Música de fondo">🔊</button>
+        <span id="livesDisplay">❤️ ❤️ ❤️</span>
 
         <div id="progressBar">
             <div id="progressFill"></div>
         </div>
+
+        <div id="timerDisplay">⏱ 45</div>
 
         <div id="missionBanner">
             <span id="missionText"></span>
@@ -732,7 +748,7 @@
             const FLOWERS = [[300, 120], [600, 120], [330, 520], [580, 520], [450, 200], [450, 440]];
 
             const ITEMS = [
-                { emoji: '🥛', cat: 'descartable', fact: 'Gracias a la invensión de los vasos de plastico logra evitar contagios, al no compartir tazas.' },
+                { emoji: '🥛', cat: 'descartable', fact: 'Gracias a la invención de los vasos de plastico logra evitar contagios, al no compartir tazas.' },
                 { emoji: '🥕', cat: 'organico', fact: 'La composta hecha con restos orgánicos enriquece el suelo.' },
                 { emoji: '🧴', cat: 'plastico', fact: 'Una botella de plástico tarda hasta 500 años en degradarse.' },
                 { emoji: '🛍️', cat: 'plastico', fact: 'Cada año terminan en el mar 8 millones de toneladas de plástico.' },
@@ -1116,7 +1132,7 @@
                 if (!keepPos) spawnAllItems();
                 state.roundFacts = [];
                 state.running = false;
-                state.missionIntro = { text: m.name, icon: m.icon, timer: 3 };
+                state.missionIntro = { text: m.name, icon: m.icon, timer: 5 };
                 updateHUD();
             }
 
