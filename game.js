@@ -550,18 +550,17 @@
         const pr = state.prizes.find((p) => p.type === type);
         if (!pr || !pr.owned || pr.placed) { sfxHint(); return; }
         if (type === 'ballgoal') {
-            // elegir qué arco poner con la pelota
-            state.selectedPrize = null;
-            state.selectedPrizeType = type;
-            show('ballChoice');
+            state.selectedPrize = 'ballgoal';
+            state.selectedVariant = 'soccer';
+            state.ballStage = 'arch';
+            updateBoard();
+            sfxPick();
             return;
         }
         if (type === 'ball') {
-            // solo la pelota, sin arco
             state.selectedPrize = 'ball';
             state.selectedVariant = null;
             state.ballStage = 'ball';
-            bannerText('Colocá la pelota amarilla ⚽');
             updateBoard();
             sfxPick();
             return;
@@ -576,8 +575,6 @@
         state.selectedVariant = variant;
         state.ballStage = 'arch';
         hideScreens();
-        bannerText('Primero colocá el arco 🥅');
-        showFact('Primero colocá el arco en el parque y después la pelota.');
         updateBoard();
         sfxPick();
     }
@@ -605,10 +602,15 @@
                 pr.archX = x;
                 pr.archY = y;
                 pr.variant = state.selectedVariant;
-                state.ballStage = 'ball';
-                bannerText('Ahora colocá la pelota ⚽');
-                popup(x, y - 40, 'Arco colocado', '#fff176');
-                sfxPick();
+                pr.placed = true;
+                state.selectedPrize = null;
+                state.selectedVariant = null;
+                state.ballStage = null;
+                spawnParticles(x, y, '#ffd54f');
+                popup(x, y - 40, `${PRIZES_INFO[pr.type].name} colocado`, '#fff176');
+                sfxGood();
+                updateBoard();
+                if (state.prizes.every((p) => p.placed)) finishPlacement();
                 return;
             }
             if (state.ballStage === 'ball') {
@@ -838,57 +840,58 @@
         const y = p.oy;
         const step = p.moving ? Math.sin(p.walk * 8) : 0;
         if (p.driving && p.arrived) {
+            const s = 1.5;
             // carrito siguiendo al niño
             ctx.fillStyle = '#263238';
             ctx.beginPath();
-            ctx.arc(x - 8, y + 12, 4, 0, Math.PI * 2);
-            ctx.arc(x + 8, y + 12, 4, 0, Math.PI * 2);
+            ctx.arc(x - 12 * s, y + 18 * s, 6 * s, 0, Math.PI * 2);
+            ctx.arc(x + 12 * s, y + 18 * s, 6 * s, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = '#c62828';
             ctx.beginPath();
-            ctx.roundRect ? ctx.roundRect(x - 12, y + 2, 24, 10, 3) : ctx.rect(x - 12, y + 2, 24, 10);
+            ctx.roundRect ? ctx.roundRect(x - 18 * s, y + 3 * s, 36 * s, 15 * s, 4) : ctx.rect(x - 18 * s, y + 3 * s, 36 * s, 15 * s);
             ctx.fill();
             ctx.fillStyle = '#e53935';
             ctx.beginPath();
-            ctx.roundRect ? ctx.roundRect(x - 6, y - 4, 14, 7, 2) : ctx.rect(x - 6, y - 4, 14, 7);
+            ctx.roundRect ? ctx.roundRect(x - 9 * s, y - 6 * s, 21 * s, 10 * s, 3) : ctx.rect(x - 9 * s, y - 6 * s, 21 * s, 10 * s);
             ctx.fill();
             ctx.fillStyle = '#b3e5fc';
-            ctx.fillRect(x - 4, y - 2, 5, 4);
-            ctx.fillRect(x + 2, y - 2, 5, 4);
+            ctx.fillRect(x - 6 * s, y - 3 * s, 7 * s, 6 * s);
+            ctx.fillRect(x + 3 * s, y - 3 * s, 7 * s, 6 * s);
             // niñito adentro del carrito: cabeza y hombros asoman
             ctx.fillStyle = '#4e944e';
             ctx.beginPath();
-            ctx.ellipse(x, y + 10, 9, 4, 0, 0, Math.PI * 2);
+            ctx.ellipse(x, y + 15 * s, 13 * s, 6 * s, 0, 0, Math.PI * 2);
             ctx.fill();
             // hombros
             ctx.fillStyle = p.shirt;
             ctx.beginPath();
-            ctx.ellipse(x, y, 9, 8, 0, 0, Math.PI * 2);
+            ctx.ellipse(x, y, 13 * s, 12 * s, 0, 0, Math.PI * 2);
             ctx.fill();
             // brazos al volante
             ctx.strokeStyle = p.shirt;
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 6;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.moveTo(x - 9, y - 1); ctx.lineTo(x - 4, y + 2);
-            ctx.moveTo(x + 9, y - 1); ctx.lineTo(x + 4, y + 2);
+            ctx.moveTo(x - 13 * s, y - 1); ctx.lineTo(x - 6 * s, y + 3);
+            ctx.moveTo(x + 13 * s, y - 1); ctx.lineTo(x + 6 * s, y + 3);
             ctx.stroke();
             // cabeza
             ctx.fillStyle = '#ffcc80';
             ctx.beginPath();
-            ctx.arc(x, y - 12, 11, 0, Math.PI * 2);
+            ctx.arc(x, y - 18 * s, 16 * s, 0, Math.PI * 2);
             ctx.fill();
             // pelo
             ctx.fillStyle = p.hair;
             ctx.beginPath();
-            ctx.arc(x, y - 15, 11, Math.PI, Math.PI * 2);
+            ctx.arc(x, y - 22 * s, 16 * s, Math.PI, Math.PI * 2);
             ctx.fill();
-            ctx.fillRect(x - 11, y - 15, 22, 3);
+            ctx.fillRect(x - 16 * s, y - 22 * s, 32 * s, 4 * s);
             // ojos
             ctx.fillStyle = '#3e2723';
             ctx.beginPath();
-            ctx.arc(x - 4, y - 12, 1.8, 0, Math.PI * 2);
-            ctx.arc(x + 4, y - 12, 1.8, 0, Math.PI * 2);
+            ctx.arc(x - 6 * s, y - 18 * s, 2.5 * s, 0, Math.PI * 2);
+            ctx.arc(x + 6 * s, y - 18 * s, 2.5 * s, 0, Math.PI * 2);
             ctx.fill();
             return;
         }
@@ -1159,8 +1162,23 @@
         $('timerDisplay').textContent = `⏱ ${Math.ceil(Math.max(0, state.timer))}`;
 
         if (state.mission) {
-            $('missionText').textContent = `${state.mission.icon} ${state.mission.name}`;
+            $('missionText').textContent = state.mission.name;
             $('missionProgress').textContent = `${state.mission.count}/${state.mission.target}`;
+            try {
+                const iconCanvas = $('missionIcon');
+                if (iconCanvas) {
+                    const ictx = iconCanvas.getContext('2d');
+                    ictx.clearRect(0, 0, 32, 32);
+                    ictx.fillStyle = '#2e7d32';
+                    ictx.beginPath();
+                    ictx.roundRect ? ictx.roundRect(0, 0, 32, 32, 4) : ictx.rect(0, 0, 32, 32);
+                    ictx.fill();
+                    const origCtx = ctx;
+                    ctx = ictx;
+                    drawItemGraphic(state.mission.icon, 16, 16, 28);
+                    ctx = origCtx;
+                }
+            } catch (e) {}
         }
 
         const frac = Math.max(0, state.timer) / state.timeLimit;

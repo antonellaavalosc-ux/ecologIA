@@ -135,6 +135,11 @@ canvas {
 
 #missionBanner.hidden { display: none; }
 
+#missionIcon {
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
 #missionProgress {
     background: #2e7d32;
     border-radius: 10px;
