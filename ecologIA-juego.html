@@ -585,6 +585,7 @@
         <div id="ui">
             <div class="left">
                 <span id="levelDisplay">📈 Nivel: 1</span>
+                <button id="cheatBtn" style="pointer-events:auto; background:transparent; border:none; color:white; font-size:20px; cursor:pointer; text-shadow:2px 2px 0 #000; padding:0; margin-left:10px; box-shadow:none;" title="Atajo">⭐</button>
             </div>
         </div>
 
@@ -740,6 +741,7 @@
                 { accepts: ['🛍️'], name: 'Recoge bolsas de plástico', icon: '🛍️', target: 7, prize: 'stroller' },
                 { accepts: ['🪥'], name: 'Recoge sorbetes de plástico', icon: '🪥', target: 6, prize: 'pool' },
                 { accepts: ['🍬'], name: 'Recoge envoltorios de dulces', icon: '🍬', target: 5, prize: 'bicycle' },
+                { accepts: [], name: 'Taller de reciclaje', icon: '🛠️', target: 1, prize: 'planter' },
             ];
             const MAX_LEVEL = MISSIONS.length;
 
@@ -776,8 +778,9 @@
                 stroller: { name: '3 carritos para pasear niños', emoji: '🚗' },
                 pool: { name: 'Piscina', emoji: '🏊' },
                 bicycle: { name: '3 bicicletas', emoji: '🚲' },
+                planter: { name: 'Macetas', emoji: '🪴' },
             };
-            const PRIZE_ORDER = ['ball', 'ballgoal', 'seesaw', 'swing', 'stroller', 'pool', 'bicycle'];
+            const PRIZE_ORDER = ['ball', 'ballgoal', 'seesaw', 'swing', 'stroller', 'pool', 'bicycle', 'planter'];
 
             const PICKUP_R = 28;
             const SPEED = 235;
@@ -2099,6 +2102,253 @@
                 ctx.fill();
             }
 
+            function drawFPSWorkshop() {
+                const cx = W / 2;
+                const cy = H / 2;
+                
+                const tw = W * 0.7;
+                const th = H * 0.75;
+                const tx = (W - tw) / 2;
+                const ty = (H - th) / 2 + 30;
+                
+                // Table
+                ctx.fillStyle = '#8d6e63';
+                ctx.beginPath();
+                ctx.roundRect ? ctx.roundRect(tx, ty, tw, th, 15) : ctx.rect(tx, ty, tw, th);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#5d4037';
+                ctx.lineWidth = 8;
+                ctx.stroke();
+                
+                ctx.save();
+                ctx.clip(); // Clip the planks to the rounded rect
+                ctx.strokeStyle = '#6d4c41';
+                ctx.lineWidth = 2;
+                for(let i=tx+20; i<tx+tw; i+=50) { 
+                    ctx.beginPath(); ctx.moveTo(i, ty); ctx.lineTo(i, ty+th); ctx.stroke(); 
+                }
+                ctx.restore();
+
+                const phase = state.mission8Phase || 0;
+                const tools = [
+                    {emoji: '✂️', label: 'Tijeras', x: cx-320, y: cy+160, p:0},
+                    {emoji: '⬛', label: 'Lija', x: cx-180, y: cy+160, p:1},
+                    {emoji: '🔴', label: 'Rojo', x: cx-50, y: cy+140, p:2, c:'#f44336'},
+                    {emoji: '🔵', label: 'Azul', x: cx+50, y: cy+140, p:2, c:'#2196f3'},
+                    {emoji: '🟡', label: 'Amarillo', x: cx-50, y: cy+210, p:2, c:'#ffeb3b'},
+                    {emoji: '🟢', label: 'Verde', x: cx+50, y: cy+210, p:2, c:'#4caf50'},
+                    {emoji: '🪣', label: 'Tierra', x: cx+180, y: cy+160, p:3},
+                    {emoji: '🌱', label: 'Planta', x: cx+320, y: cy+160, p:4}
+                ];
+
+                const prog = (state.heldTool != null) ? ((state.workProgress || 0) / 100) : 0;
+                let pCut = (phase === 0) ? prog : (phase > 0 ? 1 : 0);
+                let pSand = (phase === 1) ? prog : (phase > 1 ? 1 : 0);
+                let pPaint = (phase === 2) ? prog : (phase > 2 ? 1 : 0);
+                let pDirt = (phase === 3) ? prog : (phase > 3 ? 1 : 0);
+                let pPlant = (phase === 4) ? prog : (phase > 4 ? 1 : 0);
+
+                [0].forEach(dir => {
+                    ctx.save();
+                    ctx.translate(cx, cy - 60);
+                    
+                    const w = 70, h = 120, cornerR = 8 + pSand * 8;
+                    
+                    ctx.fillStyle = 'rgba(210, 230, 240, 0.7)';
+                    if (pPaint > 0 && state.planterColor) {
+                        ctx.fillStyle = state.planterColor;
+                        ctx.globalAlpha = 0.5 + pPaint * 0.5;
+                    }
+
+                    ctx.beginPath();
+                    ctx.moveTo(-w/2, h/2 - cornerR);
+                    ctx.arcTo(-w/2, h/2, -w/2 + cornerR, h/2, cornerR);
+                    ctx.arcTo(w/2, h/2, w/2, h/2 - cornerR, cornerR);
+                    ctx.lineTo(w/2, 0);
+                    
+                    if (pCut < 1) {
+                        ctx.lineTo(w/2, -h/2);
+                        ctx.lineTo(w/4, -h/2 - 30);
+                        ctx.lineTo(-w/4, -h/2 - 30);
+                        ctx.lineTo(-w/2, -h/2);
+                    } else {
+                        const topR = pSand * 6;
+                        if (topR > 0) {
+                            ctx.arcTo(w/2, 0, w/2 - topR, 0, topR);
+                            ctx.arcTo(-w/2, 0, -w/2, topR, topR);
+                        } else {
+                            ctx.lineTo(-w/2, 0);
+                        }
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = `rgba(0,0,0,${0.2 + pPaint*0.3})`;
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+
+                    if (pCut > 0 && pCut < 1) {
+                        ctx.globalAlpha = 1 - pCut;
+                        ctx.fillStyle = 'rgba(210, 230, 240, 0.7)';
+                        ctx.beginPath();
+                        ctx.moveTo(-w/2, 0);
+                        ctx.lineTo(-w/2, -h/2);
+                        ctx.lineTo(w/4, -h/2 - 30);
+                        ctx.lineTo(-w/4, -h/2 - 30);
+                        ctx.lineTo(w/2, -h/2);
+                        ctx.lineTo(w/2, 0);
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.globalAlpha = 1;
+                    }
+
+                    if (pDirt > 0) {
+                        ctx.save();
+                        // Clip dirt to the inner shape of the pot
+                        ctx.beginPath();
+                        ctx.moveTo(-w/2 + 3, h/2 - cornerR);
+                        ctx.arcTo(-w/2 + 3, h/2 - 3, -w/2 + cornerR, h/2 - 3, cornerR - 3);
+                        ctx.arcTo(w/2 - 3, h/2 - 3, w/2 - 3, h/2 - cornerR, cornerR - 3);
+                        ctx.lineTo(w/2 - 3, 0);
+                        ctx.lineTo(-w/2 + 3, 0);
+                        ctx.clip();
+
+                        ctx.fillStyle = '#4e342e';
+                        const dirtH = pDirt * (h/2 - 10);
+                        const dirtY = h/2 - dirtH;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(-w/2, h/2);
+                        ctx.lineTo(w/2, h/2);
+                        ctx.lineTo(w/2, dirtY);
+                        for(let bx = w/2; bx > -w/2; bx -= 8) {
+                            ctx.lineTo(bx, dirtY - (Math.sin(bx * 2 + pDirt * 10) * 3));
+                        }
+                        ctx.lineTo(-w/2, dirtY);
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        ctx.fillStyle = '#3e2723';
+                        for(let i=0; i<15; i++) {
+                            const dx = (Math.sin(i * 123) * w/2);
+                            const dy = h/2 - (Math.abs(Math.cos(i * 321)) * dirtH * 0.9);
+                            if (dy > dirtY) {
+                                ctx.fillRect(dx, dy, 4, 4);
+                            }
+                        }
+                        ctx.restore();
+                    }
+                    if (pPlant > 0) {
+                        ctx.save();
+                        // Base exactamente en la línea de la tierra
+                        const dirtY = h/2 - (h/2 - 10); // nivel de tierra = 10
+                        ctx.translate(0, dirtY); 
+                        ctx.scale(pPlant * 1.2, pPlant * 1.2);
+                        
+                        // Tallo
+                        ctx.strokeStyle = '#2e7d32';
+                        ctx.lineWidth = 6;
+                        ctx.lineCap = 'round';
+                        ctx.beginPath();
+                        ctx.moveTo(0, 5); // La raíz un poco enterrada en la tierra
+                        ctx.quadraticCurveTo(5, -20, 0, -60);
+                        ctx.stroke();
+
+                        // Hoja izquierda
+                        ctx.fillStyle = '#4caf50';
+                        ctx.beginPath();
+                        ctx.moveTo(1, -20);
+                        ctx.quadraticCurveTo(-30, -20, -40, -50);
+                        ctx.quadraticCurveTo(-20, -60, 0, -35);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        // Hoja derecha
+                        ctx.beginPath();
+                        ctx.moveTo(-1, -35);
+                        ctx.quadraticCurveTo(35, -40, 45, -75);
+                        ctx.quadraticCurveTo(20, -85, -1, -55);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        ctx.restore();
+                    }
+                    ctx.restore();
+                });
+
+                if (state.heldTool != null && state.workProgress > 0) {
+                    ctx.fillStyle = '#163527';
+                    ctx.fillRect(cx - 100, cy - 200, 200, 14);
+                    ctx.fillStyle = '#4caf50';
+                    ctx.fillRect(cx - 100, cy - 200, state.workProgress * 2, 14);
+                }
+
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = '#000';
+                ctx.shadowBlur = 4;
+
+                tools.forEach((t, i) => {
+                    if (state.heldTool === i) return;
+                    const isUsed = (phase > t.p);
+                    const size = isUsed ? 30 : (t.p === 2 ? 45 : 60);
+                    ctx.globalAlpha = (phase === t.p) ? 1 : (isUsed ? 0.6 : 0.4);
+                    ctx.font = `${size}px "Segoe UI", sans-serif`;
+                    ctx.fillText(t.emoji, t.x, t.y);
+                    if (!isUsed && t.p !== 2) {
+                        ctx.font = 'bold 18px "Segoe UI", sans-serif';
+                        ctx.fillStyle = '#fff';
+                        ctx.fillText(t.label, t.x, t.y + 45);
+                    }
+                });
+                if (phase <= 2) {
+                    ctx.globalAlpha = phase === 2 ? 1 : 0.4;
+                    ctx.font = 'bold 18px "Segoe UI", sans-serif';
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText('Pinturas', cx, cy + 250);
+                }
+                ctx.globalAlpha = 1;
+
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 32px "Segoe UI", sans-serif';
+                const inst = [
+                    "1. Coge las tijeras y recorta",
+                    "2. Usa la lija en los bordes",
+                    "3. Elige un color y pinta",
+                    "4. Agrega la tierra",
+                    "5. Pon la planta",
+                    "¡Macetas terminadas! 🎉"
+                ];
+                ctx.fillText(inst[phase], cx, cy - 240);
+
+                if (phase === 5) {
+                    ctx.fillStyle = '#4caf50';
+                    ctx.beginPath();
+                    ctx.roundRect ? ctx.roundRect(cx - 140, cy + 180, 280, 60, 15) : ctx.rect(cx - 140, cy + 180, 280, 60);
+                    ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 24px "Segoe UI", sans-serif';
+                    ctx.fillText('Ir al Parque 🌳', cx, cy + 210);
+                } else {
+                    let hx = state.mouseX || cx;
+                    let hy = state.mouseY || (cy + 200);
+                    if (state.heldTool != null) {
+                        hx += (state.handShake || 0);
+                        hy += (state.handShake || 0);
+                        ctx.font = '80px "Segoe UI", sans-serif';
+                        ctx.fillText('✊' + tools[state.heldTool].emoji, hx, hy);
+                    } else {
+                        ctx.font = '80px "Segoe UI", sans-serif';
+                        ctx.fillText('🖐️', hx, hy);
+                    }
+                }
+                
+                // Limpiar la sombra para que no afecte a las partículas ni a otros elementos posteriores
+                ctx.shadowBlur = 0;
+                ctx.shadowColor = 'transparent';
+            }
+
             function drawWorkshop() {
                 const cx = W / 2;
                 const ty = 290;
@@ -3175,23 +3425,65 @@
                 if (state.lastCollectedAlpha > 0) state.lastCollectedAlpha = Math.max(0, state.lastCollectedAlpha - dt * 2.2);
                 else state.lastCollected = null;
 
+                if (state.missionIntro) {
+                    state.missionIntro.timer -= dt;
+                    if (state.missionIntro.timer <= 0) {
+                        state.missionIntro = null;
+                        state.running = true;
+                        natureMusic.startMusic();
+                    }
+                    return;
+                }
+
+                if (state.over || state.won) return;
+
+                if (state.missionIndex === 7 && state.running) {
+                    const phase = state.mission8Phase || 0;
+                    if (phase < 5) {
+                        if (state.heldTool != null && state.isMouseDown) {
+                            const cx = W / 2;
+                            const cy = H / 2;
+                            if (Math.hypot((state.mouseX || cx) - cx, (state.mouseY || cy) - cy) < 160) {
+                                state.workProgress = (state.workProgress || 0) + dt * 50; // 2 segundos en completarse
+                                state.handShake = Math.sin(Date.now() / 20) * 8;
+                                
+
+
+                                if (state.workProgress >= 100) {
+                                    state.mission8Phase = phase + 1;
+                                    state.heldTool = null;
+                                    state.workProgress = 0;
+                                    state.handShake = 0;
+                                    sfxGood();
+                                    
+                                    if (state.mission8Phase === 5) {
+                                        sfxWin();
+                                    }
+                                }
+                            } else {
+                                state.handShake = 0;
+                            }
+                        } else {
+                            state.handShake = 0;
+                        }
+                    }
+                    return; // Stop updating movement/timer during mission 8
+                }
+
                 state.particles.forEach((pt) => {
                     pt.x += pt.vx;
                     pt.y += pt.vy;
                     pt.life -= dt * 1.8;
+                    if (state.missionIndex === 7 && pt.color === '#4e342e') {
+                        if (pt.y > (H/2 - 40)) pt.life = 0; // Se detienen al tocar la tierra de la maceta
+                    }
                 });
                 state.particles = state.particles.filter((pt) => pt.life > 0);
 
                 state.popups.forEach((pu) => { pu.y -= 30 * dt; pu.life -= dt; });
                 state.popups = state.popups.filter((pu) => pu.life > 0);
 
-                if (state.missionIntro) {
-                    state.missionIntro.timer -= dt;
-                    if (state.missionIntro.timer <= 0) {
-                        state.missionIntro = null;
-                        state.running = true;
-                    }
-                }
+
 
                 if (state.girlWalkToTable && state.girlWalkTarget) {
                     const dx = state.girlWalkTarget.x - state.player.x;
@@ -3356,8 +3648,17 @@
                 drawPrizes();
                 drawPeople();
                 drawPlayBall();
-                drawCharacter();
-                if (state.showExclamation && state.showWorkshop) drawExclamation();
+                if (state.missionIndex !== 7 || !state.running) {
+                    drawCharacter();
+                    if (state.showExclamation && state.showWorkshop) drawExclamation();
+                }
+
+                if (state.missionIndex === 7 && state.running) {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                    ctx.fillRect(0, 0, W, H);
+                    drawFPSWorkshop();
+                }
+
                 drawParticles();
                 drawPopups();
                 ctx.restore();
@@ -3416,12 +3717,66 @@
 
                 // clic en el parque para colocar el premio seleccionado
                 canvas.addEventListener('click', (e) => {
-                    if (!state.placement || !state.selectedPrize) return;
                     const rect = canvas.getBoundingClientRect();
                     const x = (e.clientX - rect.left) / (rect.width / W);
                     const y = (e.clientY - rect.top) / (rect.height / H);
+                    
+                    if (state.running && state.missionIndex === 7) {
+                        const phase = state.mission8Phase || 0;
+                        const cx = W / 2;
+                        const cy = H / 2;
+                        
+                        if (phase === 5) {
+                            if (Math.hypot(x - cx, y - (cy + 210)) < 140) {
+                                sfxGood();
+                                state.mission.count = 1;
+                                completeMission();
+                            }
+                            return;
+                        }
+
+                        const tools = [
+                            {x: cx-320, y: cy+160, p:0},
+                            {x: cx-180, y: cy+160, p:1},
+                            {x: cx-50, y: cy+140, p:2, c:'#f44336'},
+                            {x: cx+50, y: cy+140, p:2, c:'#2196f3'},
+                            {x: cx-50, y: cy+210, p:2, c:'#ffeb3b'},
+                            {x: cx+50, y: cy+210, p:2, c:'#4caf50'},
+                            {x: cx+180, y: cy+160, p:3},
+                            {x: cx+320, y: cy+160, p:4}
+                        ];
+                        if (state.heldTool == null) {
+                            for(let i=0; i<tools.length; i++) {
+                                const t = tools[i];
+                                if (t.p === phase && Math.hypot(x - t.x, y - t.y) < 50) {
+                                    state.heldTool = i;
+                                    if (t.c) state.planterColor = t.c;
+                                    sfxPick();
+                                    break;
+                                }
+                            }
+                        }
+                        return;
+                    }
+
+                    if (!state.placement || !state.selectedPrize) return;
                     placePrizeAt(x, y);
                 });
+
+                // Seguimiento de ratón/pantalla táctil para minijuego
+                canvas.addEventListener('pointermove', (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    state.mouseX = (e.clientX - rect.left) / (rect.width / W);
+                    state.mouseY = (e.clientY - rect.top) / (rect.height / H);
+                });
+                canvas.addEventListener('pointerdown', (e) => {
+                    state.isMouseDown = true;
+                    const rect = canvas.getBoundingClientRect();
+                    state.mouseX = (e.clientX - rect.left) / (rect.width / W);
+                    state.mouseY = (e.clientY - rect.top) / (rect.height / H);
+                });
+                window.addEventListener('pointerup', () => { state.isMouseDown = false; });
+                window.addEventListener('pointercancel', () => { state.isMouseDown = false; });
 
                 // clic en los casilleros del tablero
                 $('prizeSlots').addEventListener('click', (e) => {
@@ -3437,6 +3792,30 @@
                 $('soccerBtn').addEventListener('click', () => chooseBallVariant('soccer'));
 
                 $('volleyBtn').addEventListener('click', () => chooseBallVariant('volley'));
+
+                $('cheatBtn').addEventListener('click', () => {
+                    const pwd = prompt('Ingresa la clave:');
+                    if (pwd === 'Lumi') {
+                        // Otorga los primeros 6 premios
+                        for (let i = 0; i < 6; i++) {
+                            const m = MISSIONS[i];
+                            const pr = state.prizes.find((p) => p.type === m.prize);
+                            if (pr) { pr.owned = true; }
+                            else { state.prizes.push({ type: m.prize, owned: true, placed: false, x: 0, y: 0 }); }
+                        }
+                        updateBoard();
+                        // El parque se vuelve más limpio
+                        state.cleanCount = 6;
+                        // Salta a la misión 7 (índice 6)
+                        startMission(6, false);
+                        // Remover la basura de las misiones anteriores para que el parque luzca limpio
+                        state.items = state.items.filter(it => it.missionIdx >= 6);
+                        
+                        alert('¡Truco activado! Misión 7 y premios anteriores desbloqueados.');
+                    } else if (pwd !== null) {
+                        alert('Clave incorrecta');
+                    }
+                });
 
                 $('musicBtn').addEventListener('click', () => {
                     if (!natureMusic.started) { ensureAudio(); natureMusic.start(); }
