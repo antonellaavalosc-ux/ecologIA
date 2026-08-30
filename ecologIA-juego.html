@@ -1133,6 +1133,8 @@
                 state.holdingBall = false;
                 state.playBall = null;
                 state.placement = false;
+                state.showWorkshop = false;
+                state.showExclamation = false;
                 state.selectedPrize = null;
                 state.selectedVariant = null;
                 state.ballStage = null;
@@ -1412,6 +1414,8 @@
             function finishPlacement() {
                 state.placement = false;
                 state.selectedPrize = null;
+                state.showWorkshop = false;
+                state.showExclamation = false;
                 $('placementBanner').classList.add('hidden');
                 $('prizeBoard').classList.add('hidden');
                 state.running = true;
@@ -3435,8 +3439,6 @@
                     return;
                 }
 
-
-
                 if (state.missionIndex === 7 && state.running && !state.won) {
                     const phase = state.mission8Phase || 0;
                     if (phase < 5) {
@@ -3842,6 +3844,10 @@
                             state.showExclamation = true;
                             setTimeout(() => {
                                 showFact(state.girlMessage);
+                                setTimeout(() => {
+                                    state.showExclamation = false;
+                                    state.showWorkshop = false;
+                                }, 5000);
                             }, 3000);
                         }, 0);
                     }, 2000);
