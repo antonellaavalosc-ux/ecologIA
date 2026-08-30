@@ -43,31 +43,6 @@
             z-index: 10;
         }
 
-        #replayBtn {
-            position: absolute;
-            top: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 30;
-            padding: 10px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #fff;
-            background: #2e7d32;
-            border: 3px solid #ffffff;
-            border-radius: 24px;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-        }
-
-        #replayBtn:hover {
-            background: #388e3c;
-        }
-
-        #replayBtn.hidden {
-            display: none;
-        }
-
         html,
         body {
             height: 100%;
@@ -607,8 +582,6 @@
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
 
-        <button id="replayBtn" class="hidden">🔄 Volver a jugar</button>
-
         <div id="ui">
             <div class="left">
                 <span id="levelDisplay">📈 Nivel: 1</span>
@@ -844,6 +817,13 @@
                 popups: [],
                 bob: 0,
                 lastTime: 0,
+                workshopTimer: null,
+                showWorkshop: false,
+                showExclamation: false,
+                girlWalkToTable: false,
+                girlWalkTarget: null,
+                girlMessage: '',
+                girlShowMessage: false,
             };
 
             let audioCtx = null;
@@ -1160,7 +1140,6 @@
                 $('missionBanner').classList.remove('hidden');
                 $('progressBar').classList.remove('hidden');
                 $('placementBanner').classList.add('hidden');
-                $('replayBtn').classList.add('hidden');
                 $('prizeSlots').dataset.built = '';
                 updateBoard();
                 startMission(0);
@@ -1458,7 +1437,6 @@
             }
 
             function startParkOpening() {
-                $('replayBtn').classList.remove('hidden');
                 const swingPr = state.prizes.find((p) => p.type === 'swing');
                 const seesawPr = state.prizes.find((p) => p.type === 'seesaw');
                 const ballPr = state.prizes.find((p) => p.type === 'ball');
@@ -2119,6 +2097,66 @@
                 ctx.beginPath();
                 ctx.arc(x + 4 * s, y + 4 * s, 12 * s, 0, Math.PI * 2);
                 ctx.fill();
+            }
+
+            function drawWorkshop() {
+                const cx = W / 2;
+                const ty = 290;
+                ctx.fillStyle = '#8d6e63';
+                ctx.fillRect(cx - 72, ty, 144, 10);
+                ctx.fillStyle = '#6d4c41';
+                ctx.fillRect(cx - 68, ty + 10, 6, 30);
+                ctx.fillRect(cx + 62, ty + 10, 6, 30);
+            }
+
+            function drawExclamation() {
+                const p = state.player;
+                const ex = p.x;
+                const ey = p.y - 55 + Math.sin(state.bob * 4) * 4;
+                ctx.font = 'bold 36px "Segoe UI", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ff0';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.strokeText('!', ex, ey);
+                ctx.fillText('!', ex, ey);
+                ctx.lineWidth = 1;
+            }
+
+            function drawGirlSpeech() {
+                const p = state.player;
+                const bx = p.x;
+                const by = p.y - 70;
+                ctx.font = 'bold 14px "Segoe UI", sans-serif';
+                const tw = ctx.measureText(state.girlMessage).width;
+                const bw = tw + 20;
+                const bh = 32;
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#1b5e20';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(bx - bw / 2 + 8, by - bh / 2);
+                ctx.arcTo(bx + bw / 2, by - bh / 2, bx + bw / 2, by + bh / 2, 8);
+                ctx.arcTo(bx + bw / 2, by + bh / 2, bx - bw / 2, by + bh / 2, 8);
+                ctx.arcTo(bx - bw / 2, by + bh / 2, bx - bw / 2, by - bh / 2, 8);
+                ctx.arcTo(bx - bw / 2, by - bh / 2, bx + bw / 2, by - bh / 2, 8);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(bx - 5, by + bh / 2);
+                ctx.lineTo(bx, by + bh / 2 + 8);
+                ctx.lineTo(bx + 5, by + bh / 2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                ctx.lineWidth = 1;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#1b5e20';
+                ctx.font = 'bold 13px "Segoe UI", sans-serif';
+                ctx.fillText(state.girlMessage, bx, by);
             }
 
             function drawItems() {
@@ -3155,6 +3193,20 @@
                     }
                 }
 
+                if (state.girlWalkToTable && state.girlWalkTarget) {
+                    const dx = state.girlWalkTarget.x - state.player.x;
+                    const dy = state.girlWalkTarget.y - state.player.y;
+                    const d = Math.hypot(dx, dy);
+                    if (d > 4) {
+                        const sp = 120;
+                        state.player.x += (dx / d) * sp * dt;
+                        state.player.y += (dy / d) * sp * dt;
+                        state.player.dir = { x: dx / d, y: dy / d };
+                    } else {
+                        state.girlWalkToTable = false;
+                    }
+                }
+
                 // gente en el parque
                 state.people.forEach((p) => {
                     p.walk += dt;
@@ -3162,8 +3214,13 @@
                     if (p.wander && p.arrived) {
                         p.idle -= dt;
                         if (p.idle <= 0) {
-                            p.tx = 50 + Math.random() * (W - 100);
-                            p.ty = 100 + Math.random() * (H - 140);
+                            let nx, ny;
+                            do {
+                                nx = 50 + Math.random() * (W - 100);
+                                ny = 100 + Math.random() * (H - 140);
+                            } while (state.showWorkshop && Math.hypot(nx - W / 2, ny - 290) < 80);
+                            p.tx = nx;
+                            p.ty = ny;
                             p.arrived = false;
                             p.moving = true;
                         }
@@ -3294,11 +3351,13 @@
                 }
                 drawBackground();
                 TREES.forEach(([x, y]) => drawTree(x, y));
+                if (state.showWorkshop) drawWorkshop();
                 drawItems();
                 drawPrizes();
                 drawPeople();
                 drawPlayBall();
                 drawCharacter();
+                if (state.showExclamation && state.showWorkshop) drawExclamation();
                 drawParticles();
                 drawPopups();
                 ctx.restore();
@@ -3386,8 +3445,26 @@
                     $('musicBtn').textContent = m ? '🔇' : '🔊';
                 });
 
-                $('replayBtn').addEventListener('click', resetGame);
-                $('guardianBtn').addEventListener('click', () => { hideScreens(); });
+                $('guardianBtn').addEventListener('click', () => {
+                    hideScreens();
+                    state.showWorkshop = false;
+                    state.showExclamation = false;
+                    state.girlWalkToTable = false;
+                    state.girlShowMessage = false;
+                    clearTimeout(state.workshopTimer);
+                    state.workshopTimer = setTimeout(() => {
+                        state.showWorkshop = true;
+                        state.girlWalkToTable = true;
+                        state.girlWalkTarget = { x: W / 2 - 40, y: 290 };
+                        state.girlMessage = '¡Vamos a separar los residuos y reutilizarlos!';
+                        setTimeout(() => {
+                            state.showExclamation = true;
+                            setTimeout(() => {
+                                showFact(state.girlMessage);
+                            }, 3000);
+                        }, 0);
+                    }, 2000);
+                });
 
                 // D-pad táctil
                 const press = (key) => { state.keys[key] = true; };
