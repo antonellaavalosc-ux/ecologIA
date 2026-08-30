@@ -3435,9 +3435,9 @@
                     return;
                 }
 
-                if (state.over || state.won) return;
 
-                if (state.missionIndex === 7 && state.running) {
+
+                if (state.missionIndex === 7 && state.running && !state.won) {
                     const phase = state.mission8Phase || 0;
                     if (phase < 5) {
                         if (state.heldTool != null && state.isMouseDown) {
@@ -3627,10 +3627,12 @@
                 tryPickup();
 
                 // temporizador
-                state.timer -= dt;
-                if (state.timer <= 0) {
-                    state.timer = 0;
-                    onTimeout();
+                if (!state.won) {
+                    state.timer -= dt;
+                    if (state.timer <= 0) {
+                        state.timer = 0;
+                        onTimeout();
+                    }
                 }
 
                 updateHUD();
@@ -3648,12 +3650,12 @@
                 drawPrizes();
                 drawPeople();
                 drawPlayBall();
-                if (state.missionIndex !== 7 || !state.running) {
+                if (state.missionIndex !== 7 || !state.running || state.won) {
                     drawCharacter();
                     if (state.showExclamation && state.showWorkshop) drawExclamation();
                 }
 
-                if (state.missionIndex === 7 && state.running) {
+                if (state.missionIndex === 7 && state.running && !state.won) {
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
                     ctx.fillRect(0, 0, W, H);
                     drawFPSWorkshop();
@@ -3721,7 +3723,7 @@
                     const x = (e.clientX - rect.left) / (rect.width / W);
                     const y = (e.clientY - rect.top) / (rect.height / H);
                     
-                    if (state.running && state.missionIndex === 7) {
+                    if (state.running && state.missionIndex === 7 && !state.won) {
                         const phase = state.mission8Phase || 0;
                         const cx = W / 2;
                         const cy = H / 2;
