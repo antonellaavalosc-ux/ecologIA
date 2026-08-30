@@ -13,7 +13,11 @@ Cada misión pide recoger **solo** un residuo concreto. La misión activa se mue
 | 1 | 🧴 Botellas de plástico | ⚽ Pelota con arco |
 | 2 | 📰 Diarios, 📦 cajas y 📄 papeles | Columpio y sube y baja |
 | 3 | 🍌 Cáscaras de plátano, 🍉 de sandía y 🍎 manzanas mordidas | 3 carritos para pasear niños |
-| 4 | 💩 Residuos sanitarios | Pileta con tobogán |
+| 4 | 🧻 Residuos sanitarios | Pileta con tobogán |
+| 5 a 7 | (Otras misiones de limpieza) | (Más premios para el parque) |
+| 8 | **Taller de reciclaje:** Minijuego en primera persona | Macetas recicladas con plantas |
+
+**Atajo Secreto:** Puedes hacer clic en el botón ⭐ en la pantalla principal e ingresar la contraseña secreta `"Lumi"` para saltar directamente a la Misión 7 con el parque limpio y todos los premios desbloqueados.
 
 **Puntos:** cada residuo correcto suma **15 puntos** y avanza la barra de la misión. El contador de puntos y el progreso se muestran en el HUD.
 
@@ -61,7 +65,9 @@ Al final aparece el botón **"🔄 Volver a jugar"** para reiniciar la partida c
 ## ✨ Características
 
 - **Parque que se limpia solo:** con cada misión completada desaparecen el barro, las manchas y los papeles, y el parque vuelve a florecer.
+- **Minijuego Taller de Reciclaje:** Una vista en primera persona donde interactúas con herramientas (tijeras, lija, pinturas, tierra) para transformar botellas de plástico en macetas reales paso a paso, arrastrando el mouse para simular el trabajo manual.
 - **Educativo:** datos ambientales reales leídos al final de cada ronda.
+- **Atajo Secreto:** Botón ⭐ para ingresar la contraseña "Lumi" y avanzar rápidamente por el juego.
 - **Residuos dibujados a mano:** botellas azules, papeles arrugados, cajas usadas, diarios doblados, cáscaras de plátano/sandía y manzanas mordidas (sin emojis).
 - **Sistema de misiones:** cada misión pide recoger un residuo concreto; los de otras misiones se ven apagados.
 - **Premios colocables:** pelota con arco (3 deportes), columpio y sube y baja, 3 carritos y pileta.
