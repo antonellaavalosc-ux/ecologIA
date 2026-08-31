@@ -1075,12 +1075,12 @@
 
             // ---------- Misiones ----------
             function spawnMissionItems(targetRemaining) {
-                // re-disemina solo los residuos de la misión actual que faltan (deja los de las demás)
                 const mission = state.mission;
                 const pool = ITEMS.filter((it) => mission.accepts.includes(it.emoji));
                 const targetCount = Math.max(0, targetRemaining);
                 state.items = state.items.filter((it) => it.missionIdx !== state.missionIndex);
                 for (let i = 0; i < targetCount; i++) {
+                    if (pool.length === 0) break;
                     const it = rand(pool);
                     const spot = randomSpot(true);
                     state.items.push({ ...it, missionIdx: state.missionIndex, x: spot.x, y: spot.y });
@@ -1088,11 +1088,11 @@
             }
 
             function spawnAllItems() {
-                // todo lo que el personaje va a recoger en todo el juego, de una vez
                 state.items = [];
                 MISSIONS.forEach((m, mi) => {
                     const pool = ITEMS.filter((it) => m.accepts.includes(it.emoji));
                     for (let i = 0; i < m.target; i++) {
+                        if (pool.length === 0) break;
                         const it = rand(pool);
                         const spot = randomSpot(true);
                         state.items.push({ ...it, missionIdx: mi, x: spot.x, y: spot.y });
@@ -2456,6 +2456,7 @@
             }
 
             function drawItemGraphic(emoji, x, y, size) {
+                if (!emoji) return;
                 if (emoji === '🥛') return drawMilkCup(x, y);
                 if (emoji === '🧴') return drawPlasticBottle(x, y);
                 if (emoji === '🛢️') return drawPlasticGallon(x, y);
@@ -3647,14 +3648,12 @@
                 }
                 drawBackground();
                 TREES.forEach(([x, y]) => drawTree(x, y));
-                if (state.showWorkshop) drawWorkshop();
                 drawItems();
                 drawPrizes();
                 drawPeople();
                 drawPlayBall();
                 if (state.missionIndex !== 7 || !state.running || state.won) {
                     drawCharacter();
-                    if (state.showExclamation && state.showWorkshop) drawExclamation();
                 }
 
                 if (state.missionIndex === 7 && state.running && !state.won) {
