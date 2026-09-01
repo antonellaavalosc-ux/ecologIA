@@ -1,4 +1,4 @@
-# ecologIA: Limpiar el Parque 🌳♻️
+# Guardián del planeta 🌳♻️
 
 Un juego educativo donde ayudas a limpiar un parque lleno de basura. Desarrollado en **HTML, CSS y JavaScript** (HTML5 Canvas), **sin librerías ni dependencias externas**.
 
