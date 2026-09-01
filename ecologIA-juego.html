@@ -260,14 +260,11 @@
         .screen {
             position: absolute;
             inset: 0;
-            background: rgba(15, 43, 29, 0.65);
+            background: transparent;
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 20;
-        }
-        #startScreen {
-            background: #0f2b1d;
         }
 
         .screen.hidden {
@@ -275,7 +272,7 @@
         }
 
         .card {
-            background: linear-gradient(180deg, rgba(29, 92, 61, 0.7), rgba(15, 43, 29, 0.7));
+            background: linear-gradient(180deg, #1d5c3d, #0f2b1d);
             border: 3px solid #4caf50;
             border-radius: 16px;
             padding: 30px 36px;
@@ -1233,12 +1230,10 @@
                         // solo se puede agarrar lo que pide la misión
                         if (!state.mission.accepts.includes(it.emoji)) continue;
                         state.items.splice(i, 1);
-                        const pts = 15;
-                        state.score += pts;
+                        state.score += 15;
                         state.lastCollected = it.emoji;
                         state.lastCollectedAlpha = 1;
                         spawnParticles(it.x, it.y, '#ffd54f');
-                        popup(it.x, it.y - 20, `+${pts}`, '#fff176');
                         if (!state.roundFacts.includes(it.fact)) state.roundFacts.push(it.fact);
                         sfxPick();
 
