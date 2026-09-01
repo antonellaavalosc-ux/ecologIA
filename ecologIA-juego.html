@@ -260,11 +260,14 @@
         .screen {
             position: absolute;
             inset: 0;
-            background: #0f2b1d;
+            background: rgba(15, 43, 29, 0.65);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 20;
+        }
+        #startScreen {
+            background: #0f2b1d;
         }
 
         .screen.hidden {
@@ -1793,12 +1796,21 @@
                     } else if (state.missionIndex >= MAX_LEVEL - 1) {
                         win();
                     } else {
-                        showSpeech('¡Misión completada! 🎉');
-                        setTimeout(() => {
-                            hideSpeech();
-                            startMission(state.missionIndex + 1, true);
-                            state.running = true;
-                        }, 2200);
+                        if (state.missionIndex === 6) {
+                            showSpeech('¡Vamos a reutilizar una botella! 🍾');
+                            setTimeout(() => {
+                                hideSpeech();
+                                startMission(state.missionIndex + 1, true);
+                                state.running = true;
+                            }, 3000);
+                        } else {
+                            showSpeech('¡Misión completada! 🎉');
+                            setTimeout(() => {
+                                hideSpeech();
+                                startMission(state.missionIndex + 1, true);
+                                state.running = true;
+                            }, 2200);
+                        }
                     }
                 };
                 next();
@@ -3674,13 +3686,13 @@
                     ctx.textBaseline = 'middle';
                     ctx.shadowColor = '#000';
                     ctx.shadowBlur = 6;
-                    drawItemGraphic(state.missionIntro.icon, W / 2, H / 2 - 50, 64);
+                    drawItemGraphic(state.missionIntro.icon, W / 2, H / 2 - 60, 100);
                     ctx.font = 'bold 48px "Segoe UI", sans-serif';
                     ctx.fillStyle = '#ffffff';
-                    ctx.fillText(state.missionIntro.text, W / 2, H / 2 + 20);
+                    ctx.fillText(state.missionIntro.text, W / 2, H / 2 + 40);
                     ctx.font = '28px "Segoe UI", sans-serif';
                     ctx.fillStyle = '#a5d6a7';
-                    ctx.fillText('Misión ' + (state.missionIndex + 1) + ' de ' + MAX_LEVEL, W / 2, H / 2 + 65);
+                    ctx.fillText('Misión ' + (state.missionIndex + 1) + ' de ' + MAX_LEVEL, W / 2, H / 2 + 85);
                     ctx.shadowBlur = 0;
                 }
             }
