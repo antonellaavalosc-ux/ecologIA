@@ -1,6 +1,6 @@
 # Guardián del planeta 🌳♻️
 
-Un juego educativo donde ayudas a limpiar un parque lleno de basura. Desarrollado en **HTML, CSS y JavaScript** (HTML5 Canvas), **sin librerías ni dependencias externas**.
+Un juego educativo donde ayudas a limpiar un parque lleno de basura. Desarrollado en **HTML, CSS y JavaScript** (HTML5 Canvas), **sin librerías ni dependencias externas**. Se utilizó **Opencode** para la creación de este juego.
 
 Recorre el parque, que está **sucio y descuidado**, y completa cada **misión** recogiendo la basura que se indica **antes de que el tiempo se agote (30 segundos por misión)**. Cada residuo guarda un **dato real sobre el medio ambiente** que el personaje te cuenta al terminar la ronda. Al ganar cada misión recibes un **premio** que colocas en el parque; al final, los niños entran a jugar en los juegos que armaste.
 
