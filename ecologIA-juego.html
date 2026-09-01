@@ -260,7 +260,7 @@
         .screen {
             position: absolute;
             inset: 0;
-            background: rgba(15, 43, 29, 0.65);
+            background: #0f2b1d;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -696,7 +696,7 @@
             </div>
         </div>
 
-        <div id="congratsScreen" class="screen hidden" style="background:transparent;">
+        <div id="congratsScreen" class="screen hidden">
             <div class="card" style="margin-top:10px;">
                 <div class="logo">🌍</div>
                 <h1>¡Felicidades eres un guardian del planeta!</h1>
@@ -1947,7 +1947,15 @@
             function updateHUD() {
                 $('levelDisplay').textContent = `📈 Misión: ${state.missionIndex + 1}/${MAX_LEVEL}`;
                 $('livesDisplay').textContent = '❤️ '.repeat(Math.max(0, state.lives)) + '🖤 '.repeat(Math.max(0, 3 - state.lives));
-                $('timerDisplay').textContent = `⏱ ${Math.ceil(Math.max(0, state.timer))}`;
+                if (state.missionIndex === 7) {
+                    $('timerDisplay').style.display = 'none';
+                    $('progressFill').style.width = '0%';
+                    $('progressFill').parentElement.style.display = 'none';
+                } else {
+                    $('timerDisplay').style.display = '';
+                    $('progressFill').parentElement.style.display = '';
+                    $('timerDisplay').textContent = `⏱ ${Math.ceil(Math.max(0, state.timer))}`;
+                }
 
                 if (state.mission) {
                     $('missionText').textContent = state.mission.name;
@@ -2291,10 +2299,24 @@
                 tools.forEach((t, i) => {
                     if (state.heldTool === i) return;
                     const isUsed = (phase > t.p);
-                    const size = isUsed ? 30 : (t.p === 2 ? 45 : 60);
                     ctx.globalAlpha = (phase === t.p) ? 1 : (isUsed ? 0.6 : 0.4);
-                    ctx.font = `${size}px "Segoe UI", sans-serif`;
-                    ctx.fillText(t.emoji, t.x, t.y);
+                    if (t.p === 2) {
+                        // pincel con mancha de color
+                        ctx.save();
+                        ctx.translate(t.x, t.y);
+                        ctx.rotate(-0.5);
+                        ctx.fillStyle = '#8d6e63';
+                        ctx.fillRect(-3, -30, 6, 40);
+                        ctx.fillStyle = t.c;
+                        ctx.beginPath();
+                        ctx.arc(0, 30, 8, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    } else {
+                        const size = isUsed ? 30 : 60;
+                        ctx.font = `${size}px "Segoe UI", sans-serif`;
+                        ctx.fillText(t.emoji, t.x, t.y);
+                    }
                     if (!isUsed && t.p !== 2) {
                         ctx.font = 'bold 18px "Segoe UI", sans-serif';
                         ctx.fillStyle = '#fff';
@@ -2898,7 +2920,7 @@
                 ctx.scale(1.7, 1.7);
                 if (type === 'swing') ctx.scale(1.25, 1.25); // columpios más grandes
                 else if (type === 'seesaw') ctx.scale(1.25, 1.25); // sube y baja más grande
-                else if (type === 'planter') ctx.scale(1.4, 1.4); // macetas más grandes
+                else if (type === 'planter') ctx.scale(0.66, 0.66); // macetas
                 switch (type) {
                     case 'ball_arch': {
                         // solo el arco elegido (sin la pelota)
