@@ -8,14 +8,29 @@ Recorre el parque, que está **sucio y descuidado**, y completa cada **misión**
 
 Cada misión pide recoger **solo** un residuo concreto. La misión activa se muestra en el **cartel inferior** del parque (con su barra de progreso). Los residuos que no corresponden a la misión actual se ven apagados y no se pueden recoger. Al inicio de cada misión, tienes 5 segundos para prepararte.
 
-| Nivel | Qué recoger | Premio |
+| Nivel | Qué recoger (Objetivo) | Premio al ganar |
 |---|---|---|
-| 1 | 🧴 Botellas de plástico | ⚽ Pelota con arco |
-| 2 | 📰 Diarios, 📦 cajas y 📄 papeles | Columpio y sube y baja |
-| 3 | 🍌 Cáscaras de plátano, 🍉 de sandía y 🍎 manzanas mordidas | 3 carritos para pasear niños |
-| 4 | 🪥 Residuos sanitarios | Pileta con tobogán |
-| 5 a 7 | (Otras misiones de limpieza) | (Más premios para el parque) |
-| 8 | **Taller de reciclaje:** Minijuego en primera persona | 4 Macetas recicladas con plantas |
+| **1** | 🧴 **Botellas de plástico** (8 residuos) | ⚽ **Pelota amarilla** |
+| **2** | 🛢️ **Galones de plástico** (7 residuos) | 🥅 **Pelota con arco** (Fútbol, básquet o vóley) |
+| **3** | 🥛 **Vasos de plástico** (6 residuos) | 🛝 **Sube y baja** |
+| **4** | 🫙 **Tapers de plástico** (4 residuos) | 🎠 **Columpio** |
+| **5** | 🛍️ **Bolsas de plástico** (7 residuos) | 🏎️ **3 carritos para pasear niños** |
+| **6** | 🪥 **Sorbetes de plástico** (6 residuos) | 🏊 **Piscina** (con agua animada) |
+| **7** | 🍬 **Envoltorios de dulces** (5 residuos) | 🚲 **3 bicicletas** |
+| **8** | 🛠️ **Taller de reciclaje:** Minijuego en primera persona | 🪴 **4 Macetas recicladas con plantas** grandes |
+
+### 🛠️ Misión 8 al Detalle: El Taller de Reciclaje
+La **Misión 8** es el clímax del juego. Una vez que el parque ha sido limpiado de toda la basura superficial, se te invita a realizar una actividad práctica de reciclaje a través de un **minijuego inmersivo en primera persona**.
+
+En lugar de simplemente caminar y recoger, la pantalla cambia a una vista sobre una mesa de trabajo de madera, donde aplicarás las "3R" (Reducir, Reutilizar y Reciclar). Tu objetivo será fabricar macetas utilizando botellas de plástico que recolectaste en el Nivel 1. El taller se compone de 5 fases interactivas y secuenciales:
+
+1. **Cortar:** Haz clic y arrastra las tijeras ✂️ sobre la botella de plástico a lo largo de la línea punteada para cortarla a la mitad.
+2. **Lijar:** Usa un bloque de lija 🧽 para frotar los bordes cortados de la botella, suavizándolos para que no queden filosos (se ve el polvo de lijado).
+3. **Pintar:** Elige uno de los 4 colores de pintura disponibles (Rojo 🔴, Azul 🔵, Amarillo 🟡 o Verde 🟢) y arrastra el pincel 🖌️ sobre el plástico hasta pintar toda la superficie exterior de tu maceta reciclada.
+4. **Tierra:** Arrastra una bolsa de sustrato/tierra 🟤 y viértela con cuidado dentro de la maceta vacía hasta llenarla.
+5. **Plantar:** Finalmente, selecciona una planta 🌱 y arrástrala sobre la tierra. Aparecerá una planta frondosa con hermosas flores, ¡indicando que has terminado la maceta!
+
+Una vez que completes la primera maceta, podrás presionar **"Ir al Parque"**. Como premio por tu esfuerzo creativo, recibirás **4 réplicas de la maceta decorada que fabricaste**, para colocarlas libremente por todo el parque en el Modo Colocación y embellecer el lugar.
 
 **Puntos:** cada residuo correcto suma puntos y avanza la barra de la misión. El progreso se muestra en el HUD.
 
