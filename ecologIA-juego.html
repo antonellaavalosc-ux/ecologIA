@@ -585,7 +585,6 @@
         <div id="ui">
             <div class="left">
                 <span id="levelDisplay">📈 Nivel: 1</span>
-                <button id="cheatBtn" style="pointer-events:auto; background:transparent; border:none; color:white; font-size:20px; cursor:pointer; text-shadow:2px 2px 0 #000; padding:0; margin-left:10px; box-shadow:none;" title="Atajo">⭐</button>
             </div>
         </div>
 
@@ -3804,30 +3803,6 @@
                 $('soccerBtn').addEventListener('click', () => chooseBallVariant('soccer'));
 
                 $('volleyBtn').addEventListener('click', () => chooseBallVariant('volley'));
-
-                $('cheatBtn').addEventListener('click', () => {
-                    const pwd = prompt('Ingresa la clave:');
-                    if (pwd === 'Lumi') {
-                        // Otorga los primeros 6 premios
-                        for (let i = 0; i < 6; i++) {
-                            const m = MISSIONS[i];
-                            const pr = state.prizes.find((p) => p.type === m.prize);
-                            if (pr) { pr.owned = true; }
-                            else { state.prizes.push({ type: m.prize, owned: true, placed: false, x: 0, y: 0 }); }
-                        }
-                        updateBoard();
-                        // El parque se vuelve más limpio
-                        state.cleanCount = 6;
-                        // Salta a la misión 7 (índice 6)
-                        startMission(6, false);
-                        // Remover la basura de las misiones anteriores para que el parque luzca limpio
-                        state.items = state.items.filter(it => it.missionIdx >= 6);
-                        
-                        alert('¡Truco activado! Misión 7 y premios anteriores desbloqueados.');
-                    } else if (pwd !== null) {
-                        alert('Clave incorrecta');
-                    }
-                });
 
                 $('musicBtn').addEventListener('click', () => {
                     if (!natureMusic.started) { ensureAudio(); natureMusic.start(); }
