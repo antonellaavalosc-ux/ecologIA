@@ -397,7 +397,7 @@
         if (!keepPos) spawnAllItems();
         state.roundFacts = [];
         state.running = false;
-        state.missionIntro = { text: m.name, icon: m.icon, timer: 3 };
+        state.missionIntro = { text: m.name, icon: m.icon, timer: 5 };
         updateHUD();
     }
 
