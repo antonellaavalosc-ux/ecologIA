@@ -1,4 +1,4 @@
-# Guardián del planeta 🌳♻️
+# Planeta Pixel 🌳♻️
 
 Un juego educativo donde ayudas a limpiar un parque lleno de basura. Desarrollado en **HTML, CSS y JavaScript** (HTML5 Canvas), **sin librerías ni dependencias externas**. Se utilizó **Opencode** para la creación de este juego.
 
@@ -17,24 +17,23 @@ Cada misión pide recoger **solo** un residuo concreto. La misión activa se mue
 | **5** | 🛍️ **Bolsas de plástico** (7 residuos) | 🏎️ **3 carritos para pasear niños** |
 | **6** | 🪥 **Sorbetes de plástico** (6 residuos) | 🏊 **Piscina** (con agua animada) |
 | **7** | 🍬 **Envoltorios de dulces** (5 residuos) | 🚲 **3 bicicletas** |
-| **8** | 🛠️ **Taller de reciclaje:** Minijuego en primera persona | 🪴 **4 Macetas recicladas con plantas** grandes |
+| **8** | 🛠️ **Taller de reciclaje:** Minijuego en primera persona | 🪴 **4 Macetas recicladas con plantas** |
 
 ### 🛠️ Misión 8 al Detalle: El Taller de Reciclaje
-La **Misión 8** es el clímax del juego. Una vez que el parque ha sido limpiado de toda la basura superficial, se te invita a realizar una actividad práctica de reciclaje a través de un **minijuego inmersivo en primera persona**.
+
+La **Misión 8** es el clímax del juego. Entre la misión 7 y el taller, el personaje dice: **"¡Vamos a reutilizar una botella!"**
 
 En lugar de simplemente caminar y recoger, la pantalla cambia a una vista sobre una mesa de trabajo de madera, donde aplicarás las "3R" (Reducir, Reutilizar y Reciclar). Tu objetivo será fabricar macetas utilizando botellas de plástico que recolectaste en el Nivel 1. El taller se compone de 5 fases interactivas y secuenciales:
 
 1. **Cortar:** Haz clic y arrastra las tijeras ✂️ sobre la botella de plástico a lo largo de la línea punteada para cortarla a la mitad.
 2. **Lijar:** Usa un bloque de lija 🧽 para frotar los bordes cortados de la botella, suavizándolos para que no queden filosos (se ve el polvo de lijado).
-3. **Pintar:** Elige uno de los 4 colores de pintura disponibles (Rojo 🔴, Azul 🔵, Amarillo 🟡 o Verde 🟢) y arrastra el pincel 🖌️ sobre el plástico hasta pintar toda la superficie exterior de tu maceta reciclada.
+3. **Pintar:** Elige uno de los 4 colores de pintura disponibles (Rojo, Azul, Amarillo o Verde) usando **pinceles con mancha de color en la punta** y arrástralos sobre el plástico hasta pintar toda la superficie exterior de tu maceta reciclada.
 4. **Tierra:** Arrastra una bolsa de sustrato/tierra 🟤 y viértela con cuidado dentro de la maceta vacía hasta llenarla.
 5. **Plantar:** Finalmente, selecciona una planta 🌱 y arrástrala sobre la tierra. Aparecerá una planta frondosa con hermosas flores, ¡indicando que has terminado la maceta!
 
 Una vez que completes la primera maceta, podrás presionar **"Ir al Parque"**. Como premio por tu esfuerzo creativo, recibirás **4 réplicas de la maceta decorada que fabricaste**, para colocarlas libremente por todo el parque en el Modo Colocación y embellecer el lugar.
 
-**Puntos:** cada residuo correcto suma puntos y avanza la barra de la misión. El progreso se muestra en el HUD.
-
-**Hechos ambientales:** cada residuo tiene un dato educativo. Al terminar la ronda, el personaje te los lee uno por uno en su **globo de diálogo** (con su cara dibujada), sin repetir los que ya te contó.
+**Nota:** El taller no muestra barra de tiempo ni contador de segundos.
 
 ## 🏆 Los premios y el tablero
 
@@ -43,7 +42,7 @@ Al completar cada misión, su premio aparece en el **tablero de premios** (abajo
 1. El personaje te muestra los **datos curiosos** de la ronda con tiempo para leerlos.
 2. Después puedes **colocar los premios**: elige uno en el tablero y haz **clic** (o toca) donde quieras en el parque.
 3. La **pelota** se coloca en 2 pasos: primero el **arco** elegido y luego la pelota.
-4. Para la última misión, podrás colocar **4 macetas con flores grandes** para decorar el parque.
+4. Para la última misión, podrás colocar **4 macetas con plantas** para decorar el parque.
 5. Cuando termines de colocar todo, presionas **"Terminar"** y el parque se abre.
 
 ### Opciones de pelota ⚽🏀🏐
@@ -66,8 +65,6 @@ Cuando colocas todos los premios y presionas **"Terminar"**, aparece la pantalla
 - **Pelota**: dos niños juegan al deporte elegido (fútbol/básquet/vóley), se pasan la pelota y la tiran al arco.
 - Si no colocaste algún juego, **no aparecen niños jugando en la nada**: simplemente corren por el parque.
 
-Al final aparece el botón **"🔄 Volver a jugar"** para reiniciar la partida completa.
-
 ## 🎮 Cómo Jugar
 
 - **Mueve** a tu personaje con las flechas (`↑ ↓ ← →`) o **WASD** (o el **D-pad táctil** en celulares).
@@ -79,21 +76,25 @@ Al final aparece el botón **"🔄 Volver a jugar"** para reiniciar la partida c
 ## ✨ Características
 
 - **Parque que se limpia solo:** con cada misión completada desaparecen el barro, las manchas y los papeles, y el parque vuelve a florecer.
-- **Minijuego Taller de Reciclaje:** Una vista en primera persona donde interactúas con herramientas (tijeras, lija, pinceles de colores, tierra) para transformar botellas de plástico en macetas reales paso a paso, arrastrando el mouse para simular el trabajo manual.
-- **Educativo:** datos ambientales reales leídos al final de cada ronda, con una frase de transición entre el nivel 7 y el 8.
-- **Múltiples Macetas:** El jugador ahora puede crear su propia maceta decorada y plantar hasta 4 de ellas en el parque final.
-- **Estética Pulida:** Interfaz opaca (fondos oscurecidos) que resalta los elementos del HUD, mejorando el contraste visual.
-- **Residuos dibujados a mano:** botellas azules, papeles arrugados, cajas usadas, diarios doblados, cáscaras de plátano/sandía y manzanas mordidas (sin emojis).
+- **Minijuego Taller de Reciclaje:** Una vista en primera persona donde interactúas con herramientas (tijeras, lija, pinceles de colores, tierra) para transformar botellas de plástico en macetas reales paso a paso. Sin barra de tiempo ni números.
+- **Transición entre misiones 7 y 8:** el personaje dice "¡Vamos a reutilizar una botella!".
+- **Educativo:** datos ambientales reales leídos al final de cada ronda.
+- **4 Macetas:** El jugador puede crear su propia maceta decorada y plantar hasta 4 de ellas en el parque final.
+- **Fondos de pantalla transparentes:** solo los cuadros con texto son opacos, se ve el parque detrás.
+- **Pantalla de inicio opaca:** fondo sólido en la pantalla de inicio.
+- **Sin puntuación flotante:** ya no aparece "+15" al recoger residuos.
+- **Imagen de intro grande:** la imagen del residuo en la pantalla previa a cada misión se muestra en tamaño grande.
+- **Residuos dibujados a mano:** botellas, vasos, galones, tapers, bolsas, sorbetes y envoltorios (sin emojis).
 - **Sistema de misiones:** cada misión pide recoger un residuo concreto; los de otras misiones se ven apagados.
-- **Premios colocables:** pelota con arco (3 deportes), columpio y sube y baja, 3 carritos y pileta.
+- **Premios colocables:** pelota con arco (3 deportes), columpio y sube y baja, 3 carritos, pileta, bicicletas y 4 macetas.
 - **Animación de apertura:** adultos y niños pasean, corren y juegan en los juegos colocados (solo en los que existen).
 - **Pelota interactiva:** patear (Espacio), agarrar y tirar por arriba (R).
 - **Sistema de vidas:** 3 corazones; pierdes uno cuando se agota el tiempo.
-- **Música de fondo de parque:** ambiente natural (**viento, arroyo y pájaros**) + **melodía alegre** generada en vivo con *Web Audio API*. Botón flotante para silenciar/activar.
+- **Música de fondo de parque:** ambiente natural (**viento, arroyo y pájaros**) + **melodía alegre** generada en vivo con *Web Audio API*. Botón flotante transparente solo con ícono.
 - **Efectos de sonido** generados en tiempo real, sin archivos externos.
 - **Gráficos en Canvas:** parque, árboles, personaje y personas dibujados con primitivas vectoriales.
 - **Globo de diálogo con la cara del personaje** dibujada (niño/niña), sin emojis.
-- **Tablero de premios** con slots de colocación semitransparentes.
+- **Tablero de premios** con slots de colocación.
 - **Responsive + D-pad táctil:** funciona en celulares, tablets y computadoras.
 
 ## 🛠️ Tecnologías
